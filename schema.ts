@@ -37,15 +37,15 @@ export type Product = {
   description: string;
   price: string;
   originalPrice: string | null;
-  categoryId: number;
-  imageUrl: string;
+  imageUrl?: string | null; // Made optional
+  downloadUrl: string | null;
   rating: string;
   reviewCount: number;
   downloadCount: number;
   tags: string[];
   isFree: boolean;
   isActive: boolean;
-  downloadUrl: string | null;
+  categoryId: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -55,14 +55,14 @@ export type InsertProduct = {
   description: string;
   price: string;
   originalPrice?: string | null;
-  categoryId: number;
-  imageUrl: string;
+  imageUrl?: string | null; // Made optional
+  downloadUrl?: string | null;
   rating?: string;
   reviewCount?: number;
   downloadCount?: number;
   tags?: string[];
   isFree?: boolean;
-  downloadUrl?: string | null;
+  categoryId: number;
 };
 
 export type CartItem = {
@@ -82,7 +82,6 @@ export type InsertCartItem = {
 export type Order = {
   id: number;
   userId: number;
-  totalAmount: string;
   status: string;
   paymentMethod: string | null;
   createdAt: Date;
@@ -90,7 +89,6 @@ export type Order = {
 
 export type InsertOrder = {
   userId: number;
-  totalAmount: string;
   status?: string;
   paymentMethod?: string | null;
 };
