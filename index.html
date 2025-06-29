@@ -30,7 +30,7 @@
     </div>
     <div id="products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
   </main>
-  <!-- Modal for Developer Form -->
+  <!-- Developer Modal -->
   <div id="developer-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md">
       <h2 id="modal-title" class="text-xl font-semibold mb-4"></h2>
@@ -55,6 +55,18 @@
       </div>
     </div>
   </div>
+  <!-- Cart Modal -->
+  <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-gray-800 p-6 rounded-lg w-full max-w-lg">
+      <h2 class="text-xl font-semibold mb-4">Your Cart</h2>
+      <div id="cart-items" class="mb-4"></div>
+      <p id="cart-total" class="text-lg font-bold mb-4">Total: $0.00</p>
+      <div class="flex space-x-2">
+        <button id="cart-checkout" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Checkout</button>
+        <button id="cart-close" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500">Close</button>
+      </div>
+    </div>
+  </div>
   <footer class="bg-gray-800 py-4 mt-8">
     <div class="container mx-auto px-4 text-center">
       <p>© 2025 VPS eShop. All rights reserved.</p>
@@ -69,7 +81,8 @@
     // Fetch categories
     async function fetchCategories() {
       try {
-        const response = await fetch('https://vps-eshop-backend.onrender.com/api/categories');
+        const response = await fetch('http://localhost:3000/api/categories');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         categories = await response.json();
         const select = document.getElementById('category-filter');
         categories.forEach(cat => {
@@ -86,17 +99,21 @@
     // Fetch products
     async function fetchProducts(categoryId = 'all', searchQuery = '') {
       try {
-        let url = 'https://vps-eshop-backend.onrender.com/api/products';
+        let url = 'http://localhost:3000/api/products';
         if (categoryId !== 'all') {
-          url = `https://vps-eshop-backend.onrender.com/api/products/category/${categoryId}`;
+          url = `http://localhost:3000/api/products/category/${categoryId}`;
         } else if (searchQuery) {
-          url = `https://vps-eshop-backend.onrender.com/api/search?q=${encodeURIComponent(searchQuery)}`;
+          url = `http://localhost:3000/api/search?q=${encodeURIComponent(searchQuery)}`;
         }
         const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const products = await response.json();
         displayProducts(products);
       } catch (error) {
         console.error('Error fetching products:', error);
+        document.getElementById('products').innerHTML = '<p class="text-gray-400 text-center col-span-full">Failed to load products. Please try again.</p>';
       }
     }
 
@@ -145,7 +162,7 @@
       document.querySelector('input[name="is-developer"][value="yes"]').checked = true;
     }
 
-    // Toggle form fields based on developer status
+    // Toggle developer form fields
     document.querySelectorAll('input[name="is-developer"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
         const isDeveloper = e.target.value === 'yes';
@@ -154,7 +171,7 @@
       });
     });
 
-    // Modal submit
+    // Developer modal submit
     document.getElementById('modal-submit').addEventListener('click', () => {
       const isDeveloper = document.querySelector('input[name="is-developer"]:checked').value === 'yes';
       const githubInput = document.getElementById('github-input').value;
@@ -179,7 +196,7 @@
       payWithCrypto(currentProduct.id, currentProduct.title, currentProduct.price);
     });
 
-    // Modal cancel
+    // Developer modal cancel
     document.getElementById('modal-cancel').addEventListener('click', () => {
       document.getElementById('developer-modal').classList.add('hidden');
       currentProduct = null;
@@ -195,15 +212,58 @@
     // Update cart count
     function updateCartCount() {
       document.getElementById('cart-count').textContent = `Cart: ${cart.length} items`;
+      updateCartModal();
     }
 
-    // View cart
+    // Update cart modal
+    function updateCartModal() {
+      const cartItemsDiv = document.getElementById('cart-items');
+      const cartTotal = document.getElementById('cart-total');
+      cartItemsDiv.innerHTML = '';
+      if (cart.length === 0) {
+        cartItemsDiv.innerHTML = '<p class="text-gray-400">Cart is empty.</p>';
+        cartTotal.textContent = 'Total: $0.00';
+        return;
+      }
+      cart.forEach((item, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'flex justify-between items-center mb-2';
+        itemDiv.innerHTML = `
+          <span>${item.title} - $${Number(item.price).toFixed(2)}</span>
+          <button class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700" data-index="${index}">Remove</button>
+        `;
+        itemDiv.querySelector('button').onclick = () => removeFromCart(index);
+        cartItemsDiv.appendChild(itemDiv);
+      });
+      const total = cart.reduce((sum, item) => sum + item.price, 0);
+      cartTotal.textContent = `Total: $${Number(total).toFixed(2)}`;
+    }
+
+    // Remove from cart
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartCount();
+    }
+
+    // Show cart modal
     document.getElementById('view-cart').addEventListener('click', () => {
+      document.getElementById('cart-modal').classList.remove('hidden');
+      updateCartModal();
+    });
+
+    // Cart modal close
+    document.getElementById('cart-close').addEventListener('click', () => {
+      document.getElementById('cart-modal').classList.add('hidden');
+    });
+
+    // Cart checkout (for now, just logs)
+    document.getElementById('cart-checkout').addEventListener('click', () => {
       if (cart.length === 0) {
         alert('Cart is empty!');
-      } else {
-        alert('Cart:\n' + JSON.stringify(cart, null, 2));
+        return;
       }
+      alert('Proceeding to checkout:\n' + JSON.stringify(cart, null, 2));
+      document.getElementById('cart-modal').classList.add('hidden');
     });
 
     // Pay with CoinPayments
@@ -214,8 +274,8 @@
         amount: price,
         currency: 'USD',
         crypto_currency: 'USDT',
-        success_url: 'https://tool-selling-website.vercel.app/success',
-        cancel_url: 'https://tool-selling-website.vercel.app/cancel'
+        success_url: 'http://localhost:8080/success',
+        cancel_url: 'http://localhost:8080/cancel'
       });
     }
 
