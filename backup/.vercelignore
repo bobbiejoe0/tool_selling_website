@@ -1,0 +1,11 @@
+.firebase/
+backend/
+dist/
+functions/
+node_modules/
+tool_selling_website/
+.firebaserc
+firebase.json
+package-lock.json
+package.json
+pglite-debug.log

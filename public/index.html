@@ -10,31 +10,31 @@
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
   <header class="bg-gray-800 py-4 shadow-lg sticky top-0 z-10">
-    <div class="container mx-auto px-4 flex flex-col sm:flex-row justify-between items-center">
-      <h1 class="text-2xl font-bold flex items-center">
+    <div class="container mx-auto px-4 flex flex-col items-center sm:flex-row sm:justify-between">
+      <h1 class="text-2xl font-bold flex items-center mb-4 sm:mb-0">
         <i class="fas fa-server mr-2"></i> VPS eShop
       </h1>
-      <div class="flex items-center space-x-4 mt-4 sm:mt-0">
-        <input id="search-bar" type="text" placeholder="Search VPS plans..." class="p-2 bg-gray-700 text-white rounded w-48">
+      <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+        <input id="search-bar" type="text" placeholder="Search VPS plans..." class="p-2 bg-gray-700 text-white rounded w-full sm:w-48">
         <div id="cart-count" class="text-lg">Cart: 0 items</div>
-        <button id="view-cart" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">View Cart</button>
-        <button id="auth-btn" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500">Login / Signup</button>
-        <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 hidden">Logout</button>
+        <button id="view-cart" class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 w-full sm:w-auto mt-2 sm:mt-0">View Cart</button>
+        <button id="auth-btn" class="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-500 w-full sm:w-auto mt-2 sm:mt-0">Login / Signup</button>
+        <button id="logout-btn" class="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 w-full sm:w-auto mt-2 sm:mt-0 hidden">Logout</button>
       </div>
     </div>
   </header>
   <main class="container mx-auto px-4 py-8">
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:space-x-4">
-      <label for="category-filter" class="text-lg font-semibold">Filter by Niche:</label>
-      <select id="category-filter" class="p-2 bg-gray-700 text-white rounded">
+      <label for="category-filter" class="text-lg font-semibold mb-2 sm:mb-0">Filter by Niche:</label>
+      <select id="category-filter" class="p-2 bg-gray-700 text-white rounded w-full sm:w-auto">
         <option value="all">All Niches</option>
       </select>
     </div>
-    <div id="products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    <div id="products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </main>
   <!-- Login/Signup Modal -->
   <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-gray-800 p-8 rounded-lg w-full max-w-md">
+    <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md mx-4 sm:mx-0">
       <h2 id="auth-title" class="text-2xl font-semibold mb-6 text-center">Login or Signup</h2>
       <div class="mb-4">
         <label for="auth-username" class="block text-sm font-medium mb-2">Username</label>
@@ -48,16 +48,16 @@
         <label for="auth-password" class="block text-sm font-medium mb-2">Password</label>
         <input id="auth-password" type="password" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Password">
       </div>
-      <div class="flex justify-between mb-4">
-        <button id="login-submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-5/12">Login</button>
-        <button id="signup-submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-5/12">Signup</button>
+      <div class="flex flex-col sm:flex-row justify-between mb-4 space-y-2 sm:space-y-0 sm:space-x-2">
+        <button id="login-submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto">Login</button>
+        <button id="signup-submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full sm:w-auto">Signup</button>
       </div>
       <button id="auth-cancel" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500 w-full">Cancel</button>
     </div>
   </div>
   <!-- Developer Modal -->
   <div id="developer-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md">
+    <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md mx-4 sm:mx-0">
       <h2 id="modal-title" class="text-xl font-semibold mb-4"></h2>
       <div class="mb-4">
         <label class="block text-lg font-semibold mb-2">Are you a developer?</label>
@@ -74,27 +74,28 @@
         <label for="developer-email" class="block text-sm mb-1">Your Developer's Email</label>
         <input id="developer-email" type="email" class="w-full p-2 bg-gray-700 text-white rounded" placeholder="e.g., dev@example.com">
       </div>
-      <div class="flex space-x-2">
-        <button id="modal-submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Submit & Pay</button>
-        <button id="modal-cancel" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
+      <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+        <button id="modal-submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full sm:w-auto">Submit & Pay</button>
+        <button id="modal-cancel" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
       </div>
     </div>
   </div>
   <!-- Cart Modal -->
   <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-gray-800 p-6 rounded-lg w-full max-w-lg">
+    <div class="bg-gray-800 p-6 rounded-lg w-full max-w-lg mx-4 sm:mx-0">
       <h2 class="text-xl font-semibold mb-4">Your Cart</h2>
       <div id="cart-items" class="mb-4"></div>
       <p id="cart-total" class="text-lg font-bold mb-4">Total: $0.00</p>
-      <div class="flex space-x-2">
-        <button id="cart-checkout" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Checkout</button>
-        <button id="cart-close" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500">Close</button>
+      <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+        <button id="cart-checkout" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full sm:w-auto">Checkout</button>
+        <button id="cart-close" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
       </div>
     </div>
   </div>
   <script>
-    const API_BASE_URL = '/api'; // Vercel handles this routing
+    const API_BASE_URL = '/api';
 
+    // [Your existing JavaScript logic remains unchanged]
     async function fetchCategories() {
       try {
         const response = await fetch(`${API_BASE_URL}/categories`);
