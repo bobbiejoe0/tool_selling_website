@@ -14,7 +14,7 @@ import {
   InsertCartItem,
   InsertOrder,
   InsertOrderItem,
-} from './schema.js';
+} from './schema';
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;

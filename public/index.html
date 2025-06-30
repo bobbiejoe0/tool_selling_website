@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VPS eShop - Cloud Hosting Solutions</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.coinpayments.net/lib/coinpayments.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <header class="bg-gray-800 py-4 shadow-lg sticky top-0 z-10">
+    <div class="container mx-auto px-4 flex flex-col sm:flex-row justify-between items-center">
+      <h1 class="text-2xl font-bold flex items-center">
+        <i class="fas fa-server mr-2"></i> VPS eShop
+      </h1>
+      <div class="flex items-center space-x-4 mt-4 sm:mt-0">
+        <input id="search-bar" type="text" placeholder="Search VPS plans..." class="p-2 bg-gray-700 text-white rounded w-48">
+        <div id="cart-count" class="text-lg">Cart: 0 items</div>
+        <button id="view-cart" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">View Cart</button>
+        <button id="auth-btn" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500">Login / Signup</button>
+        <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 hidden">Logout</button>
+      </div>
+    </div>
+  </header>
+  <main class="container mx-auto px-4 py-8">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+      <label for="category-filter" class="text-lg font-semibold">Filter by Niche:</label>
+      <select id="category-filter" class="p-2 bg-gray-700 text-white rounded">
+        <option value="all">All Niches</option>
+      </select>
+    </div>
+    <div id="products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </main>
+  <!-- Login/Signup Modal -->
+  <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-gray-800 p-8 rounded-lg w-full max-w-md">
+      <h2 id="auth-title" class="text-2xl font-semibold mb-6 text-center">Login or Signup</h2>
+      <div class="mb-4">
+        <label for="auth-username" class="block text-sm font-medium mb-2">Username</label>
+        <input id="auth-username" type="text" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="e.g., bobbiejoe0">
+      </div>
+      <div class="mb-4">
+        <label for="auth-email" class="block text-sm font-medium mb-2">Email</label>
+        <input id="auth-email" type="email" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="e.g., user@example.com">
+      </div>
+      <div class="mb-6">
+        <label for="auth-password" class="block text-sm font-medium mb-2">Password</label>
+        <input id="auth-password" type="password" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Password">
+      </div>
+      <div class="flex justify-between mb-4">
+        <button id="login-submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-5/12">Login</button>
+        <button id="signup-submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-5/12">Signup</button>
+      </div>
+      <button id="auth-cancel" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500 w-full">Cancel</button>
+    </div>
+  </div>
+  <!-- Developer Modal -->
+  <div id="developer-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md">
+      <h2 id="modal-title" class="text-xl font-semibold mb-4"></h2>
+      <div class="mb-4">
+        <label class="block text-lg font-semibold mb-2">Are you a developer?</label>
+        <div class="flex space-x-4">
+          <label><input type="radio" name="is-developer" value="yes" class="mr-1" checked> Yes</label>
+          <label><input type="radio" name="is-developer" value="no" class="mr-1"> No</label>
+        </div>
+      </div>
+      <div id="yes-fields" class="mb-4">
+        <label for="github-input" class="block text-sm mb-1">GitHub Username or Email</label>
+        <input id="github-input" type="text" class="w-full p-2 bg-gray-700 text-white rounded" placeholder="e.g., bobbiejoe0 or user@example.com">
+      </div>
+      <div id="no-fields" class="mb-4 hidden">
+        <label for="developer-email" class="block text-sm mb-1">Your Developer's Email</label>
+        <input id="developer-email" type="email" class="w-full p-2 bg-gray-700 text-white rounded" placeholder="e.g., dev@example.com">
+      </div>
+      <div class="flex space-x-2">
+        <button id="modal-submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Submit & Pay</button>
+        <button id="modal-cancel" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <!-- Cart Modal -->
+  <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-gray-800 p-6 rounded-lg w-full max-w-lg">
+      <h2 class="text-xl font-semibold mb-4">Your Cart</h2>
+      <div id="cart-items" class="mb-4"></div>
+      <p id="cart-total" class="text-lg font-bold mb-4">Total: $0.00</p>
+      <div class="flex space-x-2">
+        <button id="cart-checkout" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Checkout</button>
+        <button id="cart-close" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500">Close</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const API_BASE_URL = '/api'; // Vercel handles this routing
+
+    async function fetchCategories() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/categories`);
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const categories = await response.json();
+        const categoryFilter = document.getElementById('category-filter');
+        categories.forEach(category => {
+          const option = document.createElement('option');
+          option.value = category.id;
+          option.textContent = category.name;
+          categoryFilter.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    }
+
+    async function fetchProducts(categoryId = 'all') {
+      try {
+        const url = categoryId === 'all' ? `${API_BASE_URL}/products` : `${API_BASE_URL}/products/category/${categoryId}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch products');
+        const products = await response.json();
+        const productsContainer = document.getElementById('products');
+        productsContainer.innerHTML = '';
+        if (products.length === 0) {
+          productsContainer.innerHTML = '<p class="text-gray-400 text-center col-span-full">No products found.</p>';
+          return;
+        }
+        products.forEach(product => {
+          const productCard = document.createElement('div');
+          productCard.className = 'bg-gray-800 p-4 rounded-lg shadow';
+          productCard.innerHTML = `
+            <h3 class="text-lg font-semibold">${product.title}</h3>
+            <p class="text-gray-400">${product.description}</p>
+            <p class="text-green-400 font-bold">$${product.price}</p>
+            <button class="add-to-cart bg-blue-600 text-white px-4 py-2 rounded mt-2 hover:bg-blue-700" data-id="${product.id}">Add to Cart</button>
+            <button class="buy-now bg-green-600 text-white px-4 py-2 rounded mt-2 hover:bg-green-700" data-id="${product.id}">Buy Now</button>
+          `;
+          productsContainer.appendChild(productCard);
+        });
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        document.getElementById('products').innerHTML = '<p class="text-gray-400 text-center col-span-full">Failed to load products. Please try again.</p>';
+      }
+    }
+
+    async function searchProducts() {
+      const query = document.getElementById('search-bar').value;
+      if (!query) return fetchProducts();
+      try {
+        const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error('Failed to search products');
+        const products = await response.json();
+        const productsContainer = document.getElementById('products');
+        productsContainer.innerHTML = '';
+        if (products.length === 0) {
+          productsContainer.innerHTML = '<p class="text-gray-400 text-center col-span-full">No products found.</p>';
+          return;
+        }
+        products.forEach(product => {
+          const productCard = document.createElement('div');
+          productCard.className = 'bg-gray-800 p-4 rounded-lg shadow';
+          productCard.innerHTML = `
+            <h3 class="text-lg font-semibold">${product.title}</h3>
+            <p class="text-gray-400">${product.description}</p>
+            <p class="text-green-400 font-bold">$${product.price}</p>
+            <button class="add-to-cart bg-blue-600 text-white px-4 py-2 rounded mt-2 hover:bg-blue-700" data-id="${product.id}">Add to Cart</button>
+            <button class="buy-now bg-green-600 text-white px-4 py-2 rounded mt-2 hover:bg-green-700" data-id="${product.id}">Buy Now</button>
+          `;
+          productsContainer.appendChild(productCard);
+        });
+      } catch (error) {
+        console.error('Error searching products:', error);
+        document.getElementById('products').innerHTML = '<p class="text-gray-400 text-center col-span-full">Failed to load products. Please try again.</p>';
+      }
+    }
+
+    async function updateCartCount() {
+      const userId = localStorage.getItem('userId');
+      if (!userId) return;
+      try {
+        const response = await fetch(`${API_BASE_URL}/cart/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch cart');
+        const cartItems = await response.json();
+        document.getElementById('cart-count').textContent = `Cart: ${cartItems.length} items`;
+      } catch (error) {
+        console.error('Error fetching cart count:', error);
+      }
+    }
+
+    async function addToCart(productId) {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        alert('Please login or signup to add items to cart.');
+        showAuthModal();
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE_URL}/add-to-cart`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: parseInt(userId), productId, quantity: 1 })
+        });
+        if (!response.ok) throw new Error('Failed to add to cart');
+        updateCartCount();
+        alert('Product added to cart!');
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        alert('Failed to add to cart.');
+      }
+    }
+
+    async function viewCart() {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        alert('Please login or signup to view cart.');
+        showAuthModal();
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE_URL}/cart/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch cart');
+        const cartItems = await response.json();
+        const cartItemsContainer = document.getElementById('cart-items');
+        cartItemsContainer.innerHTML = '';
+        let total = 0;
+        cartItems.forEach(item => {
+          total += parseFloat(item.product.price) * item.quantity;
+          const itemElement = document.createElement('div');
+          itemElement.className = 'flex justify-between items-center mb-2';
+          itemElement.innerHTML = `
+            <span>${item.product.title} (x${item.quantity})</span>
+            <span>$${item.product.price}</span>
+            <button class="remove-from-cart bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700" data-id="${item.productId}">Remove</button>
+          `;
+          cartItemsContainer.appendChild(itemElement);
+        });
+        document.getElementById('cart-total').textContent = `Total: $${total.toFixed(2)}`;
+        document.getElementById('cart-modal').classList.remove('hidden');
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+        alert('Failed to load cart.');
+      }
+    }
+
+    async function removeFromCart(productId) {
+      const userId = localStorage.getItem('userId');
+      try {
+        const response = await fetch(`${API_BASE_URL}/cart/${userId}/${productId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Failed to remove from cart');
+        viewCart();
+        updateCartCount();
+      } catch (error) {
+        console.error('Error removing from cart:', error);
+        alert('Failed to remove from cart.');
+      }
+    }
+
+    async function checkout() {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        alert('Please login or signup to checkout.');
+        showAuthModal();
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE_URL}/cart/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch cart');
+        const cartItems = await response.json();
+        if (cartItems.length === 0) {
+          alert('Your cart is empty.');
+          return;
+        }
+        document.getElementById('modal-title').textContent = 'Checkout Details';
+        document.getElementById('developer-modal').classList.remove('hidden');
+      } catch (error) {
+        console.error('Error initiating checkout:', error);
+        alert('Failed to initiate checkout.');
+      }
+    }
+
+    async function handlePayment() {
+      const userId = localStorage.getItem('userId');
+      const isDeveloper = document.querySelector('input[name="is-developer"]:checked').value;
+      const githubInput = document.getElementById('github-input').value;
+      const developerEmail = document.getElementById('developer-email').value;
+      if (isDeveloper === 'yes' && !githubInput) {
+        alert('Please provide a GitHub username or email.');
+        return;
+      }
+      if (isDeveloper === 'no' && !developerEmail) {
+        alert('Please provide your developer\'s email.');
+        return;
+      }
+      try {
+        const cartResponse = await fetch(`${API_BASE_URL}/cart/${userId}`);
+        if (!cartResponse.ok) throw new Error('Failed to fetch cart');
+        const cartItems = await cartResponse.json();
+        const orderResponse = await fetch(`${API_BASE_URL}/create-order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: parseInt(userId), cartItems })
+        });
+        if (!orderResponse.ok) throw new Error('Failed to create order');
+        const order = await orderResponse.json();
+        const productId = cartItems[0].productId; // Assuming single product for simplicity
+        const paymentResponse = await fetch(`${API_BASE_URL}/create-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId, cryptoCurrency: 'USDT', userId: parseInt(userId) })
+        });
+        if (!paymentResponse.ok) throw new Error('Failed to create payment');
+        const paymentData = await paymentResponse.json();
+        // Simulate CoinPayments redirect (replace with actual integration)
+        alert(`Redirecting to CoinPayments: ${JSON.stringify(paymentData)}`);
+        document.getElementById('developer-modal').classList.add('hidden');
+        document.getElementById('cart-modal').classList.add('hidden');
+        updateCartCount();
+      } catch (error) {
+        console.error('Error processing payment:', error);
+        alert('Failed to process payment.');
+      }
+    }
+
+    function showAuthModal() {
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    function hideAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+      document.getElementById('auth-username').value = '';
+      document.getElementById('auth-email').value = '';
+      document.getElementById('auth-password').value = '';
+    }
+
+    async function login() {
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+      try {
+        const response = await fetch(`${API_BASE_URL}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        if (!response.ok) throw new Error('Failed to login');
+        const user = await response.json();
+        localStorage.setItem('userId', user.id);
+        localStorage.setItem('username', user.username);
+        document.getElementById('auth-btn').textContent = `User: ${user.username}`;
+        document.getElementById('auth-btn').classList.add('bg-green-600', 'hover:bg-green-700');
+        document.getElementById('logout-btn').classList.remove('hidden');
+        hideAuthModal();
+        updateCartCount();
+      } catch (error) {
+        console.error('Error logging in:', error);
+        alert('Invalid email or password.');
+      }
+    }
+
+    async function signup() {
+      const username = document.getElementById('auth-username').value;
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+      try {
+        const response = await fetch(`${API_BASE_URL}/create-user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password })
+        });
+        if (!response.ok) throw new Error('Failed to signup');
+        const user = await response.json();
+        localStorage.setItem('userId', user.id);
+        localStorage.setItem('username', user.username);
+        document.getElementById('auth-btn').textContent = `User: ${user.username}`;
+        document.getElementById('auth-btn').classList.add('bg-green-600', 'hover:bg-green-700');
+        document.getElementById('logout-btn').classList.remove('hidden');
+        hideAuthModal();
+        updateCartCount();
+      } catch (error) {
+        console.error('Error signing up:', error);
+        alert('Failed to signup. Email may already exist.');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('userId');
+      localStorage.removeItem('username');
+      document.getElementById('auth-btn').textContent = 'Login / Signup';
+      document.getElementById('auth-btn').classList.remove('bg-green-600', 'hover:bg-green-700');
+      document.getElementById('auth-btn').classList.add('bg-gray-600', 'hover:bg-gray-500');
+      document.getElementById('logout-btn').classList.add('hidden');
+      document.getElementById('cart-count').textContent = 'Cart: 0 items';
+    }
+
+    document.getElementById('category-filter').addEventListener('change', (e) => {
+      fetchProducts(e.target.value);
+    });
+
+    document.getElementById('search-bar').addEventListener('input', searchProducts);
+
+    document.getElementById('view-cart').addEventListener('click', viewCart);
+
+    document.getElementById('cart-close').addEventListener('click', () => {
+      document.getElementById('cart-modal').classList.add('hidden');
+    });
+
+    document.getElementById('cart-checkout').addEventListener('click', checkout);
+
+    document.getElementById('auth-btn').addEventListener('click', showAuthModal);
+
+    document.getElementById('auth-cancel').addEventListener('click', hideAuthModal);
+
+    document.getElementById('login-submit').addEventListener('click', login);
+
+    document.getElementById('signup-submit').addEventListener('click', signup);
+
+    document.getElementById('logout-btn').addEventListener('click', logout);
+
+    document.getElementById('modal-cancel').addEventListener('click', () => {
+      document.getElementById('developer-modal').classList.add('hidden');
+    });
+
+    document.getElementById('modal-submit').addEventListener('click', handlePayment);
+
+    document.querySelectorAll('input[name="is-developer"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        document.getElementById('yes-fields').classList.toggle('hidden', e.target.value !== 'yes');
+        document.getElementById('no-fields').classList.toggle('hidden', e.target.value !== 'no');
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('add-to-cart')) {
+        const productId = parseInt(e.target.dataset.id);
+        addToCart(productId);
+      }
+      if (e.target.classList.contains('remove-from-cart')) {
+        const productId = parseInt(e.target.dataset.id);
+        removeFromCart(productId);
+      }
+      if (e.target.classList.contains('buy-now')) {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          alert('Please login or signup to buy.');
+          showAuthModal();
+          return;
+        }
+        document.getElementById('modal-title').textContent = 'Checkout Details';
+        document.getElementById('developer-modal').classList.remove('hidden');
+      }
+    });
+
+    // Initialize
+    fetchCategories();
+    fetchProducts();
+    if (localStorage.getItem('username')) {
+      document.getElementById('auth-btn').textContent = `User: ${localStorage.getItem('username')}`;
+      document.getElementById('auth-btn').classList.add('bg-green-600', 'hover:bg-green-700');
+      document.getElementById('logout-btn').classList.remove('hidden');
+      updateCartCount();
+    }
+  </script>
+</body>
+</html>
