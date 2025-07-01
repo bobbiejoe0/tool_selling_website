@@ -92,8 +92,32 @@
       </div>
     </div>
   </div>
+  <!-- Payment Modal -->
+  <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-gray-900 text-white p-6 rounded-lg w-full max-w-md mx-4">
+      <h2 class="text-xl font-bold mb-4">Complete Your Payment</h2>
+      <p class="mb-2"><strong>Send exactly:</strong> <span id="btc-amount" class="text-green-400"></span> BTC</p>
+      <p class="mb-2"><strong>To wallet address:</strong></p>
+      <div class="flex items-center mb-4 space-x-2">
+        <p id="btc-address" class="text-yellow-400 break-all"></p>
+        <button onclick="copyWalletAddress()" class="text-blue-400 hover:text-blue-300" title="Copy address">
+          <i class="fas fa-copy"></i>
+        </button>
+        <span id="copy-confirmation" class="text-green-400 text-sm hidden">Copied!</span>
+      </div>
+      <div class="flex justify-center mb-4">
+        <img id="btc-qr" class="w-40 h-40" alt="QR Code">
+      </div>
+      <button id="confirm-payment-btn" class="bg-blue-600 text-white px-4 py-2 rounded mt-4 hover:bg-blue-700 w-full">
+        I've Made the Payment
+      </button>
+      <p id="payment-status-text" class="text-center text-gray-300 mt-2 hidden">⏳ Processing payment...</p>
+      <button onclick="closePaymentModal()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded w-full mt-4">Close</button>
+    </div>
+  </div>
   <script>
     const API_BASE_URL = '/api';
+    let pollingInterval = null;
 
     async function fetchCategories() {
       try {
@@ -277,6 +301,60 @@
       }
     }
 
+    function showPaymentModal(address, amount, orderId) {
+      window.currentOrderId = orderId;
+      document.getElementById('btc-address').textContent = address;
+      document.getElementById('btc-amount').textContent = amount;
+      document.getElementById('btc-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bitcoin:${address}?amount=${amount}`;
+      document.getElementById('payment-modal').classList.remove('hidden');
+      document.getElementById('confirm-payment-btn').disabled = false;
+      document.getElementById('payment-status-text').classList.add('hidden');
+    }
+
+    function closePaymentModal() {
+      document.getElementById('payment-modal').classList.add('hidden');
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+      document.getElementById('confirm-payment-btn').disabled = false;
+      document.getElementById('payment-status-text').classList.add('hidden');
+    }
+
+    function copyWalletAddress() {
+      const address = document.getElementById('btc-address').textContent;
+      navigator.clipboard.writeText(address).then(() => {
+        const confirmation = document.getElementById('copy-confirmation');
+        confirmation.classList.remove('hidden');
+        setTimeout(() => confirmation.classList.add('hidden'), 2000);
+      });
+    }
+
+    function pollOrderStatus(orderId) {
+      if (pollingInterval) clearInterval(pollingInterval);
+      const statusText = document.getElementById('payment-status-text');
+      pollingInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/order-status/${orderId}`);
+          if (!res.ok) throw new Error('Failed to fetch order status');
+          const data = await res.json();
+          if (data.status === 'completed') {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            statusText.textContent = '✅ Payment confirmed! Thank you.';
+            setTimeout(closePaymentModal, 2000);
+          } else if (data.status === 'failed' || data.status === 'expired') {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            statusText.textContent = '❌ Payment failed. Please try again.';
+          }
+        } catch (err) {
+          console.error('Error checking order status:', err);
+          statusText.textContent = '⚠️ Error checking payment status.';
+        }
+      }, 15000);
+    }
+
     async function handlePayment(isBuyNow = false, productId = null) {
       const userId = localStorage.getItem('userId');
       const isDeveloper = document.querySelector('input[name="is-developer"]:checked').value;
@@ -294,7 +372,6 @@
       try {
         let order;
         if (isBuyNow && productId) {
-          // Buy Now: Create order with single product
           const orderResponse = await fetch(`${API_BASE_URL}/create-order`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -303,7 +380,6 @@
           if (!orderResponse.ok) throw new Error('Failed to create order');
           order = await orderResponse.json();
         } else {
-          // Checkout: Use cart items
           const cartResponse = await fetch(`${API_BASE_URL}/cart/${userId}`);
           if (!cartResponse.ok) throw new Error('Failed to fetch cart');
           const cartItems = await cartResponse.json();
@@ -320,14 +396,12 @@
           order = await orderResponse.json();
         }
 
-        // Log developer info (optional, adjust as needed)
         await fetch(`${API_BASE_URL}/log-developer`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: parseInt(userId), isDeveloper, githubInput, developerEmail })
         });
 
-        // Process payment
         const paymentResponse = await fetch(`${API_BASE_URL}/create-payment`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -336,10 +410,11 @@
         if (!paymentResponse.ok) throw new Error('Failed to create payment');
         const paymentData = await paymentResponse.json();
         if (paymentData.payment_url) {
-          // Redirect to payment URL (adjust for CoinPayments if needed)
           window.location.href = paymentData.payment_url;
+        } else if (paymentData.pay_address && paymentData.pay_amount) {
+          showPaymentModal(paymentData.pay_address, paymentData.pay_amount, order.id);
         } else {
-          alert('No payment URL received. Check server logs.');
+          alert('No payment info received. Please try again later.');
         }
         document.getElementById('developer-modal').classList.add('hidden');
         document.getElementById('cart-modal').classList.add('hidden');
@@ -459,6 +534,12 @@
         document.getElementById('yes-fields').classList.toggle('hidden', e.target.value !== 'yes');
         document.getElementById('no-fields').classList.toggle('hidden', e.target.value !== 'no');
       });
+    });
+
+    document.getElementById('confirm-payment-btn').addEventListener('click', () => {
+      document.getElementById('confirm-payment-btn').disabled = true;
+      document.getElementById('payment-status-text').classList.remove('hidden');
+      pollOrderStatus(window.currentOrderId);
     });
 
     document.addEventListener('click', (e) => {

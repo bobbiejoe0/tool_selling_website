@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VPS eShop Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 p-4">
+    <ul class="flex space-x-4">
+      <li><a href="?page=orders" class="hover:text-blue-400">Orders</a></li>
+      <li><a href="?page=developers" class="hover:text-blue-400">Developers</a></li>
+    </ul>
+  </nav>
+  <main class="container mx-auto p-4">
+    <div id="content">
+      <div id="orders" class="hidden">
+        <h2 class="text-2xl mb-4">Orders</h2>
+        <ul id="order-list" class="space-y-2"></ul>
+      </div>
+      <div id="developers" class="hidden">
+        <h2 class="text-2xl mb-4">Developer Logs</h2>
+        <ul id="developer-list" class="space-y-2"></ul>
+      </div>
+    </div>
+  </main>
+  <script>
+    const API_BASE_URL = '/api'; // Use relative API path
+
+    async function fetchOrders() {
+      const response = await fetch(`${API_BASE_URL}/orders`);
+      const orders = await response.json();
+      const orderList = document.getElementById('order-list');
+      orderList.innerHTML = orders.map(order => `<li>User ${order.userId} ordered on ${order.date}</li>`).join('');
+    }
+
+    async function fetchDevelopers() {
+      const response = await fetch(`${API_BASE_URL}/developers`);
+      const developers = await response.json();
+      const developerList = document.getElementById('developer-list');
+      developerList.innerHTML = developers.map(dev => `<li>User ${dev.userId} - ${dev.isDeveloper === 'yes' ? 'GitHub/Email: ' + dev.githubInput : 'Dev Email: ' + dev.developerEmail}</li>`).join('');
+    }
+
+    window.onload = () => {
+      const params = new URLSearchParams(window.location.search);
+      const page = params.get('page') || 'orders';
+      document.getElementById(page).classList.remove('hidden');
+      if (page === 'orders') fetchOrders();
+      else fetchDevelopers();
+    };
+  </script>
+</body>
+</html>

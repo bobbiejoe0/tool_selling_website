@@ -4,35 +4,38 @@ const { storage } = require('./storage.js');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const axios = require('axios');
+const crypto = require('crypto');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// Configure Nodemailer for email automation
+// Configure Nodemailer for email automation (to be configured later)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'your-email@gmail.com', // Replace with your Gmail
-    pass: 'your-app-password'     // Use an App Password if 2FA is on
+    user: process.env.EMAIL_USER || 'your-email@gmail.com',
+    pass: process.env.EMAIL_PASS || 'your-app-password'
   }
 });
 
 // Helper function to log to console (Vercel has read-only file system)
 const logToFile = (filename, entry) => {
-  console.log(`${filename}: ${entry}`); // Log to console instead of file
+  console.log(`${filename}: ${entry}`);
 };
 
-// NOWPayments configuration (move to env vars in production)
+// NOWPayments configuration
 const NOWPAYMENTS_API_KEY = process.env.NOWPAYMENTS_API_KEY || '24KGXSK-H004Z1G-K7M22EZ-32RNGBV';
 const NOWPAYMENTS_API_URL = 'https://api.nowpayments.io/v1/payment';
 const NOWPAYMENTS_IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET || 'mPUMX/aGV5uoaPk/Jd0COUat1f0YZkkE';
 
-// Ensure VERCEL_URL is a valid HTTPS URL
+// Ensure VERCEL_URL is a valid HTTPS URL and append callback path
 const getValidVercelUrl = () => {
-  const baseUrl = process.env.VERCEL_URL || 'https://ecommerce-website-gor13bbcs-testyemma123-gmailcoms-projects.vercel.app';
-  return baseUrl.startsWith('http://') || baseUrl.startsWith('https://') ? baseUrl : `https://${baseUrl}`;
+  const baseUrl = process.env.VERCEL_URL || 'ecommerce-website-bqjdovegy-testyemma123-gmailcoms-projects.vercel.app';
+  const url = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
+  const cleanUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+  return `${cleanUrl}/api/payment-callback`;
 };
 
 // --------- AUTH ---------
@@ -153,16 +156,28 @@ app.delete('/api/cart/:userId/:productId', async (req, res) => {
 });
 
 // --------- ORDERS & PAYMENT ---------
+app.get('/api/order-status/:id', async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    const order = await storage.getOrderById(orderId);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json({ status: order.status });
+  } catch (error) {
+    console.error('Error in /order-status:', error);
+    return res.status(500).json({ error: 'Failed to get order status', details: error.message });
+  }
+});
+
 app.post('/api/create-payment', async (req, res) => {
   try {
     const { orderId, userId } = req.body;
     console.log('Create payment request:', { orderId, userId });
-    const order = await storage.getOrderById(orderId);
+    const order = await storage.getOrderById(parseInt(orderId));
     if (!order) {
       console.error('Order not found:', orderId);
       return res.status(404).json({ error: 'Order not found' });
     }
-    const user = await storage.getUser(userId);
+    const user = await storage.getUser(parseInt(userId));
     if (!user) {
       console.error('User not found:', userId);
       return res.status(404).json({ error: 'User not found' });
@@ -174,28 +189,45 @@ app.post('/api/create-payment', async (req, res) => {
     }
 
     const vercelUrl = getValidVercelUrl();
+    console.log('Generated ipn_callback_url:', vercelUrl);
     const paymentData = {
-      price_amount: order.total || 10,
+      price_amount: order.total.toString(),
       price_currency: 'usd',
       pay_currency: 'btc',
-      order_id: order.id,
-      order_description: `Payment for Order #${order.id} - ${order.items.map(item => item.product.title).join(', ') || 'No items'}`,
-      ipn_callback_url: `${vercelUrl}/api/payment-callback`,
-      success_url: `${vercelUrl}/success`,
-      cancel_url: `${vercelUrl}/cancel`,
+      order_id: order.id.toString(),
+      order_description: `Payment for Order #${order.id} - ${order.items.map(item => item.product?.title).join(', ') || 'No items'}`,
+      ipn_callback_url: vercelUrl,
+      success_url: `${vercelUrl.replace('/api/payment-callback', '/success')}`,
+      cancel_url: `${vercelUrl.replace('/api/payment-callback', '/cancel')}`,
+      customer_email: user.email,
+      is_fixed_rate: true,
     };
+
     console.log('Payment data sent:', paymentData);
 
     const response = await axios.post(NOWPAYMENTS_API_URL, paymentData, {
       headers: { 'x-api-key': NOWPAYMENTS_API_KEY },
     });
     console.log('NOWPayments full response:', response.data);
-    const paymentUrl = response.data.payment_url;
+    if (response.data.payment_status === 'error') {
+      console.error('Payment creation failed:', response.data.message);
+      return res.status(500).json({ error: 'Payment creation failed', details: response.data.message });
+    }
 
     order.status = 'pending payment';
     await storage.updateOrder(order);
 
-    res.json({ payment_url: paymentUrl, order_id: order.id });
+    if (response.data.payment_url) {
+      res.json({ payment_url: response.data.payment_url });
+    } else if (response.data.pay_address && response.data.pay_amount) {
+      res.json({
+        pay_address: response.data.pay_address,
+        pay_amount: response.data.pay_amount
+      });
+    } else {
+      console.error("No usable payment data received:", response.data);
+      res.status(500).json({ error: "No valid payment info from gateway." });
+    }
   } catch (error) {
     console.error('Error in /create-payment:', error.response?.data || error.message);
     return res.status(500).json({ error: 'Failed to create payment', details: error.response?.data?.message || error.message });
@@ -206,24 +238,24 @@ app.post('/api/create-order', async (req, res) => {
   try {
     const { userId, cartItems } = req.body;
     if (!userId || !cartItems || !Array.isArray(cartItems)) return res.status(400).json({ error: 'User ID and cart items are required' });
-    const user = await storage.getUser(userId);
+    const user = await storage.getUser(parseInt(userId));
     if (!user) return res.status(404).json({ error: 'User not found' });
-    const order = await storage.createOrder({ userId, status: 'pending', paymentMethod: 'crypto' });
+    const order = await storage.createOrder({ userId: parseInt(userId), status: 'pending', paymentMethod: 'crypto' });
     let total = 0;
     for (const item of cartItems) {
-      const product = await storage.getProductById(item.productId);
+      const product = await storage.getProductById(parseInt(item.productId));
       if (!product) return res.status(404).json({ error: `Product ${item.productId} not found` });
-      await storage.addOrderItem({ orderId: order.id, productId: item.productId, quantity: item.quantity || 1 });
+      await storage.addOrderItem({ orderId: order.id, productId: parseInt(item.productId), quantity: item.quantity || 1 });
       total += parseFloat(product.price) * (item.quantity || 1);
     }
     if (total <= 0) return res.status(400).json({ error: 'Order total must be greater than 0' });
     order.total = total;
     await storage.updateOrder(order);
-    await storage.clearCart(userId);
+    await storage.clearCart(parseInt(userId));
 
-    // Send automated email
+    // Email notification (to be configured later)
     const mailOptions = {
-      from: 'your-email@gmail.com',
+      from: process.env.EMAIL_USER || 'your-email@gmail.com',
       to: user.email,
       subject: 'Order Confirmation - VPS eShop',
       text: `Hello ${user.username},\n\nWe've received your order #${order.id} and will process it after payment. Total: $${total}\n\nBest,\nVPS eShop Team`
@@ -257,27 +289,41 @@ app.get('/api/orders/:userId', async (req, res) => {
 // Payment callback endpoint
 app.post('/api/payment-callback', (req, res) => {
   try {
-    const { payment_status, order_id, payment_id, ipn_secret } = req.body;
-    console.log('Payment callback received:', JSON.stringify(req.body, null, 2));
+    const body = req.body;
 
-    if (ipn_secret !== NOWPAYMENTS_IPN_SECRET) {
-      console.error('Invalid IPN secret');
-      return res.status(403).json({ error: 'Invalid IPN secret' });
+    const receivedSignature = req.headers['x-nowpayments-sig'];
+    if (!receivedSignature) {
+      console.error('Missing IPN signature');
+      return res.status(403).json({ error: 'Missing IPN signature' });
     }
 
-    if (payment_status === 'confirmed' || payment_status === 'finished') {
-      const order = storage.getOrderById(order_id);
+    // Stringify the body exactly like NOWPayments expects
+    const payloadString = JSON.stringify(body);
+    const computedSignature = crypto
+      .createHmac('sha512', NOWPAYMENTS_IPN_SECRET)
+      .update(payloadString)
+      .digest('hex');
+
+    if (receivedSignature !== computedSignature) {
+      console.error('Invalid IPN signature');
+      return res.status(403).json({ error: 'Invalid IPN signature' });
+    }
+
+    const { payment_status, order_id, payment_id } = body;
+
+    storage.getOrderById(parseInt(order_id)).then(order => {
       if (order) {
-        order.status = 'completed';
-        order.payment_id = payment_id;
+        if (payment_status === 'confirmed' || payment_status === 'finished') {
+          order.status = 'completed';
+          order.payment_id = payment_id;
+        } else if (payment_status === 'failed' || payment_status === 'expired') {
+          order.status = 'failed';
+        }
         storage.updateOrder(order);
-        logToFile('orders.log', `Order ${order_id} payment confirmed with ${payment_id}`);
+        console.log(`Order ${order_id} payment updated to ${order.status}`);
       }
-    } else if (payment_status === 'failed' || payment_status === 'expired') {
-      const order = storage.getOrderById(order_id);
-      if (order) order.status = 'failed';
-      storage.updateOrder(order);
-    }
+    }).catch(err => console.error('Error updating order:', err));
+
     res.status(200).json({ success: true });
   } catch (error) {
     console.error('Error in /payment-callback:', error);
@@ -327,4 +373,4 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-module.exports = app; // Export for Vercel
+module.exports = app;
