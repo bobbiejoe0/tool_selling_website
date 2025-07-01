@@ -1,10 +1,33 @@
 const express = require('express');
 const cors = require('cors');
 const { storage } = require('./storage.js');
+const nodemailer = require('nodemailer');
+const fs = require('fs');
+const axios = require('axios');
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Configure Nodemailer for email automation
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'your-email@gmail.com', // Replace with your Gmail
+    pass: 'your-app-password'     // Use an App Password if 2FA is on
+  }
+});
+
+// Helper function to log to console (Vercel has read-only file system)
+const logToFile = (filename, entry) => {
+  console.log(`${filename}: ${entry}`); // Log to console instead of file
+};
+
+// NOWPayments configuration (move to env vars in production)
+const NOWPAYMENTS_API_KEY = process.env.NOWPAYMENTS_API_KEY || '24KGXSK-H004Z1G-K7M22EZ-32RNGBV';
+const NOWPAYMENTS_API_URL = 'https://api.nowpayments.io/v1/payment';
+const NOWPAYMENTS_IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET || 'mPUMX/aGV5uoaPk/Jd0COUat1f0YZkkE';
 
 // --------- AUTH ---------
 app.post('/api/login', async (req, res) => {
@@ -13,6 +36,7 @@ app.post('/api/login', async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
     const user = await storage.getUserByEmail(email);
     if (!user || user.password !== password) return res.status(401).json({ error: 'Invalid email or password' });
+    logToFile('login.log', `User ${user.username} (ID: ${user.id}) logged in`);
     return res.json({ id: user.id, username: user.username, email: user.email });
   } catch (error) {
     console.error('Error in /login:', error);
@@ -27,6 +51,7 @@ app.post('/api/create-user', async (req, res) => {
     const existingUser = await storage.getUserByEmail(email);
     if (existingUser) return res.status(400).json({ error: 'Email already exists' });
     const user = await storage.createUser({ username, email, password, firstName, lastName });
+    logToFile('login.log', `User ${user.username} (ID: ${user.id}) created`);
     return res.json({ id: user.id, username: user.username, email: user.email });
   } catch (error) {
     console.error('Error in /create-user:', error);
@@ -124,25 +149,44 @@ app.delete('/api/cart/:userId/:productId', async (req, res) => {
 // --------- ORDERS & PAYMENT ---------
 app.post('/api/create-payment', async (req, res) => {
   try {
-    const { productId, cryptoCurrency, userId } = req.body;
-    const product = await storage.getProductById(productId);
-    if (!product) return res.status(404).json({ error: 'Product not found' });
+    const { orderId, userId } = req.body;
+    console.log('Create payment request:', { orderId, userId });
+    const order = await storage.getOrderById(orderId); // Changed to getOrderById to match storage.js
+    if (!order) {
+      console.error('Order not found:', orderId);
+      return res.status(404).json({ error: 'Order not found' });
+    }
     const user = await storage.getUser(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) {
+      console.error('User not found:', userId);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     const paymentData = {
-      merchant: 'YOUR_MERCHANT_ID', // Replace with real ID later
-      item_name: product.title,
-      amount: parseFloat(product.price),
-      currency: 'USD',
-      crypto_currency: cryptoCurrency || 'USDT',
+      price_amount: order.total || 10,
+      price_currency: 'usd',
+      pay_currency: 'btc',
+      order_id: order.id,
+      order_description: `Payment for Order #${order.id} - ${order.items.map(item => item.product.title).join(', ') || 'No items'}`,
+      ipn_callback_url: `${process.env.VERCEL_URL}/api/payment-callback`,
       success_url: `${process.env.VERCEL_URL}/success`,
       cancel_url: `${process.env.VERCEL_URL}/cancel`,
-      custom: `userId:${userId}`,
     };
-    return res.json(paymentData);
+    console.log('Payment data sent:', paymentData);
+
+    const response = await axios.post(NOWPAYMENTS_API_URL, paymentData, {
+      headers: { 'x-api-key': NOWPAYMENTS_API_KEY },
+    });
+    console.log('NOWPayments response:', response.data);
+    const paymentUrl = response.data.payment_url;
+
+    order.status = 'pending payment';
+    await storage.updateOrder(order);
+
+    res.json({ payment_url: paymentUrl, order_id: order.id });
   } catch (error) {
-    console.error('Error in /create-payment:', error);
-    return res.status(500).json({ error: 'Failed to create payment' });
+    console.error('Error in /create-payment:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to create payment' });
   }
 });
 
@@ -153,10 +197,29 @@ app.post('/api/create-order', async (req, res) => {
     const user = await storage.getUser(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
     const order = await storage.createOrder({ userId, status: 'pending', paymentMethod: 'crypto' });
+    let total = 0;
     for (const item of cartItems) {
+      const product = await storage.getProductById(item.productId);
       await storage.addOrderItem({ orderId: order.id, productId: item.productId, quantity: item.quantity || 1 });
+      total += (product.price * (item.quantity || 1));
     }
+    order.total = total;
+    await storage.updateOrder(order);
     await storage.clearCart(userId);
+
+    // Send automated email
+    const mailOptions = {
+      from: 'your-email@gmail.com',
+      to: user.email,
+      subject: 'Order Confirmation - VPS eShop',
+      text: `Hello ${user.username},\n\nWe've received your order #${order.id} and will process it after payment. Total: $${total}\n\nBest,\nVPS eShop Team`
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) console.error('Error sending email:', error);
+      else console.log('Email sent:', info.response);
+    });
+
+    logToFile('orders.log', `User ${userId} ordered: ${JSON.stringify(cartItems)}, Total: $${total}`);
     return res.json(order);
   } catch (error) {
     console.error('Error in /create-order:', error);
@@ -174,6 +237,72 @@ app.get('/api/orders/:userId', async (req, res) => {
   } catch (error) {
     console.error('Error in /orders:', error);
     return res.status(500).json({ error: 'Failed to get orders' });
+  }
+});
+
+// Payment callback endpoint
+app.post('/api/payment-callback', (req, res) => {
+  try {
+    const { payment_status, order_id, payment_id, ipn_secret } = req.body;
+    console.log('Payment callback received:', JSON.stringify(req.body, null, 2));
+
+    // Verify IPN secret
+    if (ipn_secret !== NOWPAYMENTS_IPN_SECRET) {
+      console.error('Invalid IPN secret');
+      return res.status(403).json({ error: 'Invalid IPN secret' });
+    }
+
+    if (payment_status === 'confirmed' || payment_status === 'finished') {
+      const order = storage.getOrderById(order_id); // Changed to getOrderById to match storage.js
+      if (order) {
+        order.status = 'completed';
+        order.payment_id = payment_id;
+        storage.updateOrder(order);
+        logToFile('orders.log', `Order ${order_id} payment confirmed with ${payment_id}`);
+      }
+    } else if (payment_status === 'failed' || payment_status === 'expired') {
+      const order = storage.getOrderById(order_id); // Changed to getOrderById to match storage.js
+      if (order) order.status = 'failed';
+      storage.updateOrder(order);
+    }
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error in /payment-callback:', error);
+    res.status(500).json({ error: 'Failed to process callback' });
+  }
+});
+
+// --------- ADMIN ENDPOINTS ---------
+app.get('/api/orders', (req, res) => {
+  try {
+    return res.json(storage.orders || []);
+  } catch (error) {
+    console.error('Error in /api/orders:', error);
+    return res.status(500).json({ error: 'Failed to get orders' });
+  }
+});
+
+app.get('/api/developers', (req, res) => {
+  try {
+    return res.json(storage.developers || []);
+  } catch (error) {
+    console.error('Error in /api/developers:', error);
+    return res.status(500).json({ error: 'Failed to get developers' });
+  }
+});
+
+app.post('/api/log-developer', async (req, res) => {
+  try {
+    const { userId, isDeveloper, githubInput, developerEmail } = req.body;
+    if (!userId || !isDeveloper) return res.status(400).json({ error: 'User ID and developer status are required' });
+    const logEntry = { userId, isDeveloper, githubInput, developerEmail, date: new Date().toISOString() };
+    if (!storage.developers) storage.developers = [];
+    storage.developers.push(logEntry);
+    logToFile('developer.log', JSON.stringify(logEntry));
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error in /api/log-developer:', error);
+    return res.status(500).json({ error: 'Failed to log developer info' });
   }
 });
 

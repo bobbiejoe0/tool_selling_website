@@ -670,5 +670,10 @@ export class MemStorage {
         this.orderItems.set(orderItem.orderId, existingItems);
         return orderItem;
     }
+    async updateOrder(order) {
+        // Update the order in the orders Map
+        this.orders.set(order.id, order);
+        return order;
+    }
 }
 export const storage = new MemStorage();
