@@ -95,7 +95,6 @@
   <script>
     const API_BASE_URL = '/api';
 
-    // [Your existing JavaScript logic remains unchanged]
     async function fetchCategories() {
       try {
         const response = await fetch(`${API_BASE_URL}/categories`);
@@ -278,7 +277,7 @@
       }
     }
 
-    async function handlePayment() {
+    async function handlePayment(isBuyNow = false, productId = null) {
       const userId = localStorage.getItem('userId');
       const isDeveloper = document.querySelector('input[name="is-developer"]:checked').value;
       const githubInput = document.getElementById('github-input').value;
@@ -291,33 +290,63 @@
         alert('Please provide your developer\'s email.');
         return;
       }
+
       try {
-        const cartResponse = await fetch(`${API_BASE_URL}/cart/${userId}`);
-        if (!cartResponse.ok) throw new Error('Failed to fetch cart');
-        const cartItems = await cartResponse.json();
-        const orderResponse = await fetch(`${API_BASE_URL}/create-order`, {
+        let order;
+        if (isBuyNow && productId) {
+          // Buy Now: Create order with single product
+          const orderResponse = await fetch(`${API_BASE_URL}/create-order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: parseInt(userId), cartItems: [{ productId, quantity: 1 }] })
+          });
+          if (!orderResponse.ok) throw new Error('Failed to create order');
+          order = await orderResponse.json();
+        } else {
+          // Checkout: Use cart items
+          const cartResponse = await fetch(`${API_BASE_URL}/cart/${userId}`);
+          if (!cartResponse.ok) throw new Error('Failed to fetch cart');
+          const cartItems = await cartResponse.json();
+          if (cartItems.length === 0) {
+            alert('Your cart is empty.');
+            return;
+          }
+          const orderResponse = await fetch(`${API_BASE_URL}/create-order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: parseInt(userId), cartItems })
+          });
+          if (!orderResponse.ok) throw new Error('Failed to create order');
+          order = await orderResponse.json();
+        }
+
+        // Log developer info (optional, adjust as needed)
+        await fetch(`${API_BASE_URL}/log-developer`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: parseInt(userId), cartItems })
+          body: JSON.stringify({ userId: parseInt(userId), isDeveloper, githubInput, developerEmail })
         });
-        if (!orderResponse.ok) throw new Error('Failed to create order');
-        const order = await orderResponse.json();
-        const productId = cartItems[0].productId; // Assuming single product for simplicity
+
+        // Process payment
         const paymentResponse = await fetch(`${API_BASE_URL}/create-payment`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId, cryptoCurrency: 'USDT', userId: parseInt(userId) })
+          body: JSON.stringify({ orderId: order.id, userId: parseInt(userId) })
         });
         if (!paymentResponse.ok) throw new Error('Failed to create payment');
         const paymentData = await paymentResponse.json();
-        // Simulate CoinPayments redirect (replace with actual integration)
-        alert(`Redirecting to CoinPayments: ${JSON.stringify(paymentData)}`);
+        if (paymentData.payment_url) {
+          // Redirect to payment URL (adjust for CoinPayments if needed)
+          window.location.href = paymentData.payment_url;
+        } else {
+          alert('No payment URL received. Check server logs.');
+        }
         document.getElementById('developer-modal').classList.add('hidden');
         document.getElementById('cart-modal').classList.add('hidden');
         updateCartCount();
       } catch (error) {
         console.error('Error processing payment:', error);
-        alert('Failed to process payment.');
+        alert('Failed to process payment. Check console for details.');
       }
     }
 
@@ -419,7 +448,11 @@
       document.getElementById('developer-modal').classList.add('hidden');
     });
 
-    document.getElementById('modal-submit').addEventListener('click', handlePayment);
+    document.getElementById('modal-submit').addEventListener('click', () => {
+      const isBuyNow = document.getElementById('modal-title').textContent === 'Checkout Details' ? false : true;
+      const productId = isBuyNow ? parseInt(document.querySelector('.buy-now').dataset.id) : null;
+      handlePayment(isBuyNow, productId);
+    });
 
     document.querySelectorAll('input[name="is-developer"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
@@ -444,7 +477,7 @@
           showAuthModal();
           return;
         }
-        document.getElementById('modal-title').textContent = 'Checkout Details';
+        document.getElementById('modal-title').textContent = 'Buy Now Details';
         document.getElementById('developer-modal').classList.remove('hidden');
       }
     });
