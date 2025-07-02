@@ -332,18 +332,27 @@ app.post('/api/payment-callback', (req, res) => {
 });
 
 // --------- ADMIN ENDPOINTS ---------
-app.get('/api/orders', (req, res) => {
+app.get('/api/orders', async (req, res) => {
   try {
-    return res.json(Array.from(storage.orders.values()));
+    const orders = Array.from(storage.orders.values());
+    return res.json(orders);
   } catch (error) {
     console.error('Error in /api/orders:', error);
     return res.status(500).json({ error: 'Failed to get orders', details: error.message });
   }
 });
 
-app.get('/api/developers', (req, res) => {
+app.get('/api/developers', async (req, res) => {
   try {
-    return res.json(storage.developers || []);
+    if (!storage.developers) storage.developers = [];
+    const developers = await Promise.all(storage.developers.map(async (dev) => {
+      const user = await storage.getUser(parseInt(dev.userId));
+      return {
+        ...dev,
+        username: user ? user.username : 'Unknown User'
+      };
+    }));
+    return res.json(developers);
   } catch (error) {
     console.error('Error in /api/developers:', error);
     return res.status(500).json({ error: 'Failed to get developers', details: error.message });
@@ -354,8 +363,8 @@ app.post('/api/log-developer', async (req, res) => {
   try {
     const { userId, isDeveloper, githubInput, developerEmail } = req.body;
     if (!userId || !isDeveloper) return res.status(400).json({ error: 'User ID and developer status are required' });
-    const logEntry = { userId, isDeveloper, githubInput, developerEmail, date: new Date().toISOString() };
     if (!storage.developers) storage.developers = [];
+    const logEntry = { userId, isDeveloper, githubInput: githubInput || '', developerEmail: developerEmail || '', date: new Date().toISOString() };
     storage.developers.push(logEntry);
     logToFile('developer.log', JSON.stringify(logEntry));
     return res.json({ success: true });

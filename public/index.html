@@ -7,19 +7,43 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.coinpayments.net/lib/coinpayments.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top: 4px solid #3B82F6;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
   <header class="bg-gray-800 py-4 shadow-lg sticky top-0 z-10">
-    <div class="container mx-auto px-4 flex flex-col items-center sm:flex-row sm:justify-between">
-      <h1 class="text-2xl font-bold flex items-center mb-4 sm:mb-0">
+    <div class="container mx-auto px-4 flex flex-row items-center justify-between space-x-2 sm:space-x-4">
+      <h1 class="text-xl sm:text-2xl font-bold flex items-center flex-shrink-0">
         <i class="fas fa-server mr-2"></i> VPS eShop
       </h1>
-      <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-        <input id="search-bar" type="text" placeholder="Search VPS plans..." class="p-2 bg-gray-700 text-white rounded w-full sm:w-48">
-        <div id="cart-count" class="text-lg">Cart: 0 items</div>
-        <button id="view-cart" class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 w-full sm:w-auto mt-2 sm:mt-0">View Cart</button>
-        <button id="auth-btn" class="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-500 w-full sm:w-auto mt-2 sm:mt-0">Login / Signup</button>
-        <button id="logout-btn" class="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 w-full sm:w-auto mt-2 sm:mt-0 hidden">Logout</button>
+      <div class="flex items-center space-x-2 sm:space-x-4 flex-grow">
+        <input id="search-bar" type="text" placeholder="Search VPS plans..." class="p-2 bg-gray-700 text-white rounded w-full sm:w-48 flex-shrink">
+        <div id="cart-count" class="text-sm sm:text-lg whitespace-nowrap">Cart: 0 items</div>
+        <button id="view-cart" class="bg-blue-600 text-white px-2 sm:px-3 py-2 rounded hover:bg-blue-700 flex items-center">
+          <i class="fas fa-shopping-cart sm:mr-2"></i>
+          <span class="hidden sm:inline">View Cart</span>
+        </button>
+        <button id="auth-btn" class="bg-gray-600 text-white px-2 sm:px-3 py-2 rounded hover:bg-gray-500 flex items-center">
+          <i class="fas fa-user sm:mr-2"></i>
+          <span class="hidden sm:inline">Login / Signup</span>
+        </button>
+        <button id="logout-btn" class="bg-red-600 text-white px-2 sm:px-3 py-2 rounded hover:bg-red-700 flex items-center hidden">
+          <i class="fas fa-sign-out-alt sm:mr-2"></i>
+          <span class="hidden sm:inline">Logout</span>
+        </button>
       </div>
     </div>
   </header>
@@ -33,7 +57,7 @@
     <div id="products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </main>
   <!-- Login/Signup Modal -->
-  <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+  <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-20">
     <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md mx-4 sm:mx-0">
       <h2 id="auth-title" class="text-2xl font-semibold mb-6 text-center">Login or Signup</h2>
       <div class="mb-4">
@@ -56,7 +80,7 @@
     </div>
   </div>
   <!-- Developer Modal -->
-  <div id="developer-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+  <div id="developer-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-60">
     <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md mx-4 sm:mx-0">
       <h2 id="modal-title" class="text-xl font-semibold mb-4"></h2>
       <div class="mb-4">
@@ -74,6 +98,10 @@
         <label for="developer-email" class="block text-sm mb-1">Your Developer's Email</label>
         <input id="developer-email" type="email" class="w-full p-2 bg-gray-700 text-white rounded" placeholder="e.g., dev@example.com">
       </div>
+      <div id="loading-spinner" class="hidden flex justify-center items-center mb-4">
+        <div class="spinner"></div>
+        <span class="ml-2 text-gray-300">Processing...</span>
+      </div>
       <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
         <button id="modal-submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full sm:w-auto">Submit & Pay</button>
         <button id="modal-cancel" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
@@ -81,7 +109,7 @@
     </div>
   </div>
   <!-- Cart Modal -->
-  <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+  <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40">
     <div class="bg-gray-800 p-6 rounded-lg w-full max-w-lg mx-4 sm:mx-0">
       <h2 class="text-xl font-semibold mb-4">Your Cart</h2>
       <div id="cart-items" class="mb-4"></div>
@@ -155,7 +183,9 @@
             <h3 class="text-lg font-semibold">${product.title}</h3>
             <p class="text-gray-400">${product.description}</p>
             <p class="text-green-400 font-bold">$${product.price}</p>
-            <button class="add-to-cart bg-blue-600 text-white px-4 py-2 rounded mt-2 hover:bg-blue-700" data-id="${product.id}">Add to Cart</button>
+            <button class="add-to-cart bg-blue-600 text-white px-4 py-2 rounded mt-2 hover:bg-blue-700" data-id="${product.id}">
+              <i class="fas fa-cart-plus mr-2"></i>Add to Cart
+            </button>
             <button class="buy-now bg-green-600 text-white px-4 py-2 rounded mt-2 hover:bg-green-700" data-id="${product.id}">Buy Now</button>
           `;
           productsContainer.appendChild(productCard);
@@ -186,7 +216,9 @@
             <h3 class="text-lg font-semibold">${product.title}</h3>
             <p class="text-gray-400">${product.description}</p>
             <p class="text-green-400 font-bold">$${product.price}</p>
-            <button class="add-to-cart bg-blue-600 text-white px-4 py-2 rounded mt-2 hover:bg-blue-700" data-id="${product.id}">Add to Cart</button>
+            <button class="add-to-cart bg-blue-600 text-white px-4 py-2 rounded mt-2 hover:bg-blue-700" data-id="${product.id}">
+              <i class="fas fa-cart-plus mr-2"></i>Add to Cart
+            </button>
             <button class="buy-now bg-green-600 text-white px-4 py-2 rounded mt-2 hover:bg-green-700" data-id="${product.id}">Buy Now</button>
           `;
           productsContainer.appendChild(productCard);
@@ -294,6 +326,7 @@
           return;
         }
         document.getElementById('modal-title').textContent = 'Checkout Details';
+        document.getElementById('cart-modal').classList.add('hidden');
         document.getElementById('developer-modal').classList.remove('hidden');
       } catch (error) {
         console.error('Error initiating checkout:', error);
@@ -369,6 +402,14 @@
         return;
       }
 
+      // Show loading spinner
+      const submitBtn = document.getElementById('modal-submit');
+      const cancelBtn = document.getElementById('modal-cancel');
+      const spinner = document.getElementById('loading-spinner');
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+      spinner.classList.remove('hidden');
+
       try {
         let order;
         if (isBuyNow && productId) {
@@ -385,6 +426,9 @@
           const cartItems = await cartResponse.json();
           if (cartItems.length === 0) {
             alert('Your cart is empty.');
+            spinner.classList.add('hidden');
+            submitBtn.disabled = false;
+            cancelBtn.disabled = false;
             return;
           }
           const orderResponse = await fetch(`${API_BASE_URL}/create-order`, {
@@ -422,6 +466,11 @@
       } catch (error) {
         console.error('Error processing payment:', error);
         alert('Failed to process payment. Check console for details.');
+      } finally {
+        // Hide loading spinner
+        spinner.classList.add('hidden');
+        submitBtn.disabled = false;
+        cancelBtn.disabled = false;
       }
     }
 
@@ -449,7 +498,7 @@
         const user = await response.json();
         localStorage.setItem('userId', user.id);
         localStorage.setItem('username', user.username);
-        document.getElementById('auth-btn').textContent = `User: ${user.username}`;
+        document.getElementById('auth-btn').innerHTML = `<i class="fas fa-user sm:mr-2"></i><span class="hidden sm:inline">User: ${user.username}</span>`;
         document.getElementById('auth-btn').classList.add('bg-green-600', 'hover:bg-green-700');
         document.getElementById('logout-btn').classList.remove('hidden');
         hideAuthModal();
@@ -474,7 +523,7 @@
         const user = await response.json();
         localStorage.setItem('userId', user.id);
         localStorage.setItem('username', user.username);
-        document.getElementById('auth-btn').textContent = `User: ${user.username}`;
+        document.getElementById('auth-btn').innerHTML = `<i class="fas fa-user sm:mr-2"></i><span class="hidden sm:inline">User: ${user.username}</span>`;
         document.getElementById('auth-btn').classList.add('bg-green-600', 'hover:bg-green-700');
         document.getElementById('logout-btn').classList.remove('hidden');
         hideAuthModal();
@@ -488,7 +537,7 @@
     function logout() {
       localStorage.removeItem('userId');
       localStorage.removeItem('username');
-      document.getElementById('auth-btn').textContent = 'Login / Signup';
+      document.getElementById('auth-btn').innerHTML = `<i class="fas fa-user sm:mr-2"></i><span class="hidden sm:inline">Login / Signup</span>`;
       document.getElementById('auth-btn').classList.remove('bg-green-600', 'hover:bg-green-700');
       document.getElementById('auth-btn').classList.add('bg-gray-600', 'hover:bg-gray-500');
       document.getElementById('logout-btn').classList.add('hidden');
@@ -543,8 +592,8 @@
     });
 
     document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('add-to-cart')) {
-        const productId = parseInt(e.target.dataset.id);
+      if (e.target.classList.contains('add-to-cart') || e.target.closest('.add-to-cart')) {
+        const productId = parseInt(e.target.dataset.id || e.target.closest('.add-to-cart').dataset.id);
         addToCart(productId);
       }
       if (e.target.classList.contains('remove-from-cart')) {
@@ -559,6 +608,7 @@
           return;
         }
         document.getElementById('modal-title').textContent = 'Buy Now Details';
+        document.getElementById('cart-modal').classList.add('hidden');
         document.getElementById('developer-modal').classList.remove('hidden');
       }
     });
@@ -567,7 +617,7 @@
     fetchCategories();
     fetchProducts();
     if (localStorage.getItem('username')) {
-      document.getElementById('auth-btn').textContent = `User: ${localStorage.getItem('username')}`;
+      document.getElementById('auth-btn').innerHTML = `<i class="fas fa-user sm:mr-2"></i><span class="hidden sm:inline">User: ${localStorage.getItem('username')}</span>`;
       document.getElementById('auth-btn').classList.add('bg-green-600', 'hover:bg-green-700');
       document.getElementById('logout-btn').classList.remove('hidden');
       updateCartCount();

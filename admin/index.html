@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VPS eShop Admin Panel</title>
+  <title>VPS eShop Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
@@ -11,6 +11,7 @@
     <ul class="flex space-x-4">
       <li><a href="?page=orders" class="hover:text-blue-400">Orders</a></li>
       <li><a href="?page=developers" class="hover:text-blue-400">Developers</a></li>
+      <li><a href="?page=payments" class="hover:text-blue-400">Payments</a></li>
     </ul>
   </nav>
   <main class="container mx-auto p-4">
@@ -18,28 +19,85 @@
       <div id="orders" class="hidden">
         <h2 class="text-2xl mb-4">Orders</h2>
         <ul id="order-list" class="space-y-2"></ul>
+        <button onclick="processPayment()" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Process Selected Order Payment</button>
       </div>
       <div id="developers" class="hidden">
         <h2 class="text-2xl mb-4">Developer Logs</h2>
         <ul id="developer-list" class="space-y-2"></ul>
       </div>
+      <div id="payments" class="hidden">
+        <h2 class="text-2xl mb-4">Payment Management</h2>
+        <p>Select an order to process payment:</p>
+        <select id="order-select" class="mt-2 p-2 bg-gray-800 border border-gray-700 rounded">
+          <option value="">Select an order</option>
+        </select>
+        <button onclick="processPayment()" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Process Payment</button>
+        <p id="payment-status" class="mt-2"></p>
+      </div>
     </div>
   </main>
   <script>
-    const API_BASE_URL = '/api'; // Use relative API path
+    const API_BASE_URL = '/api';
 
     async function fetchOrders() {
       const response = await fetch(`${API_BASE_URL}/orders`);
       const orders = await response.json();
       const orderList = document.getElementById('order-list');
-      orderList.innerHTML = orders.map(order => `<li>User ${order.userId} ordered on ${order.date}</li>`).join('');
+      orderList.innerHTML = orders.map(order => `<li data-id="${order.id}">User ${order.userId} - ${order.status} <button onclick="selectOrder(${order.id})">Pay</button></li>`).join('');
+      const select = document.getElementById('order-select');
+      select.innerHTML = '<option value="">Select an order</option>' + orders.map(order => `<option value="${order.id}">Order ${order.id} - User ${order.userId}</option>`).join('');
     }
 
     async function fetchDevelopers() {
-      const response = await fetch(`${API_BASE_URL}/developers`);
-      const developers = await response.json();
-      const developerList = document.getElementById('developer-list');
-      developerList.innerHTML = developers.map(dev => `<li>User ${dev.userId} - ${dev.isDeveloper === 'yes' ? 'GitHub/Email: ' + dev.githubInput : 'Dev Email: ' + dev.developerEmail}</li>`).join('');
+      try {
+        const response = await fetch(`${API_BASE_URL}/developers`);
+        if (!response.ok) throw new Error('Failed to fetch developers');
+        const developers = await response.json();
+        const developerList = document.getElementById('developer-list');
+        developerList.innerHTML = developers.length === 0 
+          ? '<li class="text-gray-400">No developer logs available.</li>'
+          : developers.map(dev => `
+              <li class="bg-gray-800 p-2 rounded">
+                <strong>Username:</strong> ${dev.username} (ID: ${dev.userId})<br>
+                <strong>Developer Status:</strong> ${dev.isDeveloper === 'yes' ? 'Developer' : 'Non-Developer'}<br>
+                ${dev.isDeveloper === 'yes' ? `<strong>GitHub/Email:</strong> ${dev.githubInput || 'Not provided'}` : `<strong>Developer Email:</strong> ${dev.developerEmail || 'Not provided'}`}<br>
+                <strong>Date:</strong> ${new Date(dev.date).toLocaleString()}
+              </li>
+            `).join('');
+      } catch (error) {
+        console.error('Error fetching developers:', error);
+        document.getElementById('developer-list').innerHTML = '<li class="text-red-400">Failed to load developer logs.</li>';
+      }
+    }
+
+    async function processPayment() {
+      const status = document.getElementById('payment-status');
+      const orderId = document.getElementById('order-select').value;
+      if (!orderId) {
+        status.textContent = 'Please select an order.';
+        return;
+      }
+      status.textContent = 'Creating payment...';
+      try {
+        const response = await fetch(`${API_BASE_URL}/create-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, userId: 'user123' }), // Replace userId dynamically if needed
+        });
+        const data = await response.json();
+        if (data.payment_url) {
+          status.textContent = 'Redirecting to payment...';
+          window.location.href = data.payment_url;
+        } else {
+          status.textContent = 'Payment creation failed: ' + (data.error || 'Unknown error');
+        }
+      } catch (error) {
+        status.textContent = 'Error: ' + error.message;
+      }
+    }
+
+    function selectOrder(orderId) {
+      document.getElementById('order-select').value = orderId;
     }
 
     window.onload = () => {
@@ -47,7 +105,10 @@
       const page = params.get('page') || 'orders';
       document.getElementById(page).classList.remove('hidden');
       if (page === 'orders') fetchOrders();
-      else fetchDevelopers();
+      else if (page === 'developers') fetchDevelopers();
+      else if (page === 'payments') {
+        fetchOrders(); // Load orders for payment selection
+      }
     };
   </script>
 </body>

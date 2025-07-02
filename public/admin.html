@@ -49,10 +49,25 @@
     }
 
     async function fetchDevelopers() {
-      const response = await fetch(`${API_BASE_URL}/developers`);
-      const developers = await response.json();
-      const developerList = document.getElementById('developer-list');
-      developerList.innerHTML = developers.map(dev => `<li>User ${dev.userId} - ${dev.isDeveloper === 'yes' ? 'GitHub/Email: ' + dev.githubInput : 'Dev Email: ' + dev.developerEmail}</li>`).join('');
+      try {
+        const response = await fetch(`${API_BASE_URL}/developers`);
+        if (!response.ok) throw new Error('Failed to fetch developers');
+        const developers = await response.json();
+        const developerList = document.getElementById('developer-list');
+        developerList.innerHTML = developers.length === 0 
+          ? '<li class="text-gray-400">No developer logs available.</li>'
+          : developers.map(dev => `
+              <li class="bg-gray-800 p-2 rounded">
+                <strong>Username:</strong> ${dev.username} (ID: ${dev.userId})<br>
+                <strong>Developer Status:</strong> ${dev.isDeveloper === 'yes' ? 'Developer' : 'Non-Developer'}<br>
+                ${dev.isDeveloper === 'yes' ? `<strong>GitHub/Email:</strong> ${dev.githubInput || 'Not provided'}` : `<strong>Developer Email:</strong> ${dev.developerEmail || 'Not provided'}`}<br>
+                <strong>Date:</strong> ${new Date(dev.date).toLocaleString()}
+              </li>
+            `).join('');
+      } catch (error) {
+        console.error('Error fetching developers:', error);
+        document.getElementById('developer-list').innerHTML = '<li class="text-red-400">Failed to load developer logs.</li>';
+      }
     }
 
     async function processPayment() {
