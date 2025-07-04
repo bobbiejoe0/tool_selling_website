@@ -14,6 +14,7 @@ export class MemStorage {
         this.currentOrderItemId = 1;
         this.seedData();
     }
+
     seedData() {
         // Seed categories
         const categoriesData = [
@@ -24,28 +25,16 @@ export class MemStorage {
                 description: "VPS plans for web development and agency workflows",
             },
             {
-                name: "Forex Traders",
-                slug: "forex-traders",
-                icon: "fas fa-chart-line",
-                description: "VPS plans for automated trading and financial algorithms",
-            },
-            {
-                name: "SaaS Startups & DevOps",
-                slug: "saas-devops",
-                icon: "fas fa-server",
-                description: "VPS plans for SaaS applications and DevOps pipelines",
-            },
-            {
-                name: "E-commerce Stores",
+                name: "E-Commerce Stores",
                 slug: "ecommerce-stores",
                 icon: "fas fa-shopping-cart",
                 description: "VPS plans for online stores and e-commerce platforms",
             },
             {
-                name: "Ethical Hackers / Cybersecurity",
-                slug: "cybersecurity",
-                icon: "fas fa-shield-alt",
-                description: "VPS plans for ethical hacking and security testing",
+                name: "SaaS Startups",
+                slug: "saas-startups",
+                icon: "fas fa-server",
+                description: "VPS plans for SaaS applications and startups",
             },
             {
                 name: "Game Servers",
@@ -54,10 +43,22 @@ export class MemStorage {
                 description: "VPS plans for hosting game servers with low latency",
             },
             {
+                name: "Forex Traders",
+                slug: "forex-traders",
+                icon: "fas fa-chart-line",
+                description: "VPS plans for automated trading and financial algorithms",
+            },
+            {
                 name: "VPN Hosting",
                 slug: "vpn-hosting",
                 icon: "fas fa-lock",
                 description: "VPS plans for secure VPN hosting and tunneling",
+            },
+            {
+                name: "Developers / DevOps",
+                slug: "devops",
+                icon: "fas fa-terminal",
+                description: "VPS plans for DevOps pipelines and development workflows",
             },
             {
                 name: "Crypto / Blockchain",
@@ -71,17 +72,24 @@ export class MemStorage {
                 icon: "fas fa-blog",
                 description: "VPS plans for blogs, podcasts, and content creators",
             },
+            {
+                name: "Ethical Hackers / Cybersecurity",
+                slug: "cybersecurity",
+                icon: "fas fa-shield-alt",
+                description: "VPS plans for ethical hacking and security testing",
+            },
         ];
         categoriesData.forEach((cat) => {
             const category = { id: this.currentCategoryId++, ...cat };
             this.categories.set(category.id, category);
         });
+
         // Seed products
         const productsData = [
             // Web Developers & Agencies (Category ID: 1)
             {
                 title: "DevBox Lite",
-                description: "Entry-level VPS for web developers with 2 vCPU, 4GB RAM, and 80GB SSD storage.",
+                description: "Entry-level VPS for web developers with optimized resources.",
                 price: "140.00",
                 categoryId: 1,
                 tags: ["web-dev", "vps", "lite"],
@@ -89,7 +97,7 @@ export class MemStorage {
             },
             {
                 title: "CodeNest Pro",
-                description: "Professional VPS for agencies with 4 vCPU, 8GB RAM, and 120GB SSD storage.",
+                description: "Professional VPS for agencies with enhanced performance.",
                 price: "260.00",
                 categoryId: 1,
                 tags: ["web-dev", "vps", "pro"],
@@ -97,15 +105,15 @@ export class MemStorage {
             },
             {
                 title: "BuildStack Pro",
-                description: "Balanced VPS for development teams with 3 vCPU, 6GB RAM, and 100GB SSD storage.",
-                price: "190.00",
+                description: "Balanced VPS for development teams with robust resources.",
+                price: "180.00",
                 categoryId: 1,
                 tags: ["web-dev", "vps", "build"],
                 isFree: false,
             },
             {
                 title: "GitReady VPS",
-                description: "High-performance VPS for Git workflows with 4 vCPU, 12GB RAM, and 150GB SSD storage.",
+                description: "High-performance VPS for Git workflows.",
                 price: "310.00",
                 categoryId: 1,
                 tags: ["web-dev", "vps", "git"],
@@ -113,57 +121,57 @@ export class MemStorage {
             },
             {
                 title: "StackForge Elite",
-                description: "Elite VPS for large-scale projects with 6 vCPU, 16GB RAM, and 200GB SSD storage.",
+                description: "Elite VPS for large-scale web projects.",
                 price: "485.00",
                 categoryId: 1,
                 tags: ["web-dev", "vps", "elite"],
                 isFree: false,
             },
-            // E-commerce Stores (Category ID: 4)
+            // E-Commerce Stores (Category ID: 2)
             {
                 title: "ShopLaunch VPS",
-                description: "VPS for small e-commerce stores with 4 vCPU, 8GB RAM, and 150GB SSD storage.",
+                description: "VPS for small e-commerce stores with reliable performance.",
                 price: "250.00",
-                categoryId: 4,
+                categoryId: 2,
                 tags: ["ecommerce", "vps", "shop"],
                 isFree: false,
             },
             {
-                title: "CartSpeed Turbo",
-                description: "Fast VPS for e-commerce with 3 vCPU, 6GB RAM, and 100GB SSD storage.",
+                title: "CarSpeed Turbo",
+                description: "Fast VPS for e-commerce with optimized speed.",
                 price: "195.00",
-                categoryId: 4,
+                categoryId: 2,
                 tags: ["ecommerce", "vps", "turbo"],
                 isFree: false,
             },
             {
-                title: "EcomCore XL",
-                description: "Powerful VPS for large stores with 6 vCPU, 16GB RAM, and 250GB SSD storage.",
+                title: "EonCore XL",
+                description: "Powerful VPS for large e-commerce stores.",
                 price: "410.00",
-                categoryId: 4,
+                categoryId: 2,
                 tags: ["ecommerce", "vps", "xl"],
                 isFree: false,
             },
             {
                 title: "StorePilot Pro",
-                description: "Advanced VPS for e-commerce with 5 vCPU, 12GB RAM, and 200GB SSD storage.",
+                description: "Advanced VPS for e-commerce platforms.",
                 price: "350.00",
-                categoryId: 4,
+                categoryId: 2,
                 tags: ["ecommerce", "vps", "pro"],
                 isFree: false,
             },
             {
                 title: "CheckoutMax VPS",
-                description: "High-capacity VPS for e-commerce with 8 vCPU, 24GB RAM, and 300GB SSD storage.",
+                description: "High-capacity VPS for e-commerce checkouts.",
                 price: "445.00",
-                categoryId: 4,
+                categoryId: 2,
                 tags: ["ecommerce", "vps", "max"],
                 isFree: false,
             },
-            // SaaS Startups & DevOps (Category ID: 3)
+            // SaaS Startups (Category ID: 3)
             {
-                title: "SaaSBoost Lite",
-                description: "Lightweight VPS for SaaS startups with 4 vCPU, 8GB RAM, and 150GB NVMe storage.",
+                title: "SaaSBoot Lite",
+                description: "Lightweight VPS for SaaS startups with essential resources.",
                 price: "285.00",
                 categoryId: 3,
                 tags: ["saas", "vps", "lite"],
@@ -171,7 +179,7 @@ export class MemStorage {
             },
             {
                 title: "CodeScale VPS",
-                description: "Entry-level VPS for SaaS apps with 2 vCPU, 4GB RAM, and 80GB SSD storage.",
+                description: "Entry-level VPS for scalable SaaS applications.",
                 price: "120.00",
                 categoryId: 3,
                 tags: ["saas", "vps", "scale"],
@@ -179,7 +187,7 @@ export class MemStorage {
             },
             {
                 title: "APIForge Cloud",
-                description: "High-performance VPS for APIs with 8 vCPU, 32GB RAM, and 500GB NVMe storage.",
+                description: "High-performance VPS for SaaS APIs.",
                 price: "475.00",
                 categoryId: 3,
                 tags: ["saas", "vps", "api"],
@@ -187,7 +195,7 @@ export class MemStorage {
             },
             {
                 title: "LambdaPro Node",
-                description: "VPS for serverless apps with 6 vCPU, 16GB RAM, and 250GB SSD storage.",
+                description: "VPS for serverless SaaS applications.",
                 price: "325.00",
                 categoryId: 3,
                 tags: ["saas", "vps", "lambda"],
@@ -195,179 +203,180 @@ export class MemStorage {
             },
             {
                 title: "ScaleShip X",
-                description: "Scalable VPS for SaaS with 6 vCPU, 24GB RAM, and 300GB NVMe storage.",
+                description: "Scalable VPS for growing SaaS platforms.",
                 price: "410.00",
                 categoryId: 3,
                 tags: ["saas", "vps", "scale"],
                 isFree: false,
             },
-            {
-                title: "DevOpsNode VPS",
-                description: "VPS for DevOps workflows with 2 vCPU, 4GB RAM, and 80GB SSD storage.",
-                price: "180.00",
-                categoryId: 3,
-                tags: ["devops", "vps", "node"],
-                isFree: false,
-            },
-            {
-                title: "CI/CD Runner",
-                description: "VPS for CI/CD pipelines with 4 vCPU, 8GB RAM, and 120GB SSD storage.",
-                price: "230.00",
-                categoryId: 3,
-                tags: ["devops", "vps", "cicd"],
-                isFree: false,
-            },
-            {
-                title: "CodeOps Elite",
-                description: "Elite VPS for DevOps with 6 vCPU, 16GB RAM, and 200GB SSD storage.",
-                price: "365.00",
-                categoryId: 3,
-                tags: ["devops", "vps", "elite"],
-                isFree: false,
-            },
-            {
-                title: "BuildZone Pro",
-                description: "High-performance VPS for DevOps with 8 vCPU, 24GB RAM, and 300GB SSD storage.",
-                price: "420.00",
-                categoryId: 3,
-                tags: ["devops", "vps", "pro"],
-                isFree: false,
-            },
-            {
-                title: "AutoStack VPS",
-                description: "Automated VPS for DevOps with 4 vCPU, 12GB RAM, and 150GB SSD storage.",
-                price: "290.00",
-                categoryId: 3,
-                tags: ["devops", "vps", "auto"],
-                isFree: false,
-            },
-            // Game Servers (Category ID: 6)
+            // Game Servers (Category ID: 4)
             {
                 title: "GameForge VPS",
-                description: "VPS for game servers with 6 vCPU, 16GB RAM, and 250GB SSD storage.",
+                description: "VPS for game servers with high performance.",
                 price: "320.00",
-                categoryId: 6,
+                categoryId: 4,
                 tags: ["gaming", "vps", "game"],
                 isFree: false,
             },
             {
                 title: "UltraPing Pro",
-                description: "Low-latency VPS for gaming with 4 vCPU, 12GB RAM, and 200GB SSD storage.",
+                description: "Low-latency VPS for gaming servers.",
                 price: "290.00",
-                categoryId: 6,
+                categoryId: 4,
                 tags: ["gaming", "vps", "low-latency"],
                 isFree: false,
             },
             {
                 title: "HostArena Max",
-                description: "High-capacity VPS for game servers with 8 vCPU, 32GB RAM, and 400GB SSD storage.",
+                description: "High-capacity VPS for large game servers.",
                 price: "445.00",
-                categoryId: 6,
+                categoryId: 4,
                 tags: ["gaming", "vps", "max"],
                 isFree: false,
             },
             {
                 title: "BattleCore Elite",
-                description: "VPS for competitive gaming with 3 vCPU, 8GB RAM, and 150GB SSD storage.",
+                description: "VPS for competitive gaming with robust resources.",
                 price: "190.00",
-                categoryId: 6,
+                categoryId: 4,
                 tags: ["gaming", "vps", "elite"],
                 isFree: false,
             },
             {
                 title: "StreamCraft VPS",
-                description: "VPS for game streaming with 6 vCPU, 24GB RAM, and 300GB SSD storage.",
+                description: "VPS for game streaming with high bandwidth.",
                 price: "365.00",
-                categoryId: 6,
+                categoryId: 4,
                 tags: ["gaming", "vps", "streaming"],
                 isFree: false,
             },
-            // Forex Traders (Category ID: 2)
+            // Forex Traders (Category ID: 5)
             {
                 title: "ForexPing VPS",
-                description: "Low-latency VPS for forex trading with 2 vCPU, 2GB RAM, and 60GB SSD storage.",
+                description: "Low-latency VPS for forex trading.",
                 price: "125.00",
-                categoryId: 2,
+                categoryId: 5,
                 tags: ["forex", "vps", "low-latency"],
                 isFree: false,
             },
             {
                 title: "FXUltraNode",
-                description: "High-performance VPS for forex with 6 vCPU, 16GB RAM, and 200GB SSD storage.",
+                description: "High-performance VPS for forex trading.",
                 price: "390.00",
-                categoryId: 2,
+                categoryId: 5,
                 tags: ["forex", "vps", "ultra"],
                 isFree: false,
             },
             {
                 title: "TradeSync Pro",
-                description: "VPS for forex trading with 4 vCPU, 8GB RAM, and 120GB SSD storage.",
+                description: "VPS for synchronized forex trading.",
                 price: "235.00",
-                categoryId: 2,
+                categoryId: 5,
                 tags: ["forex", "vps", "pro"],
                 isFree: false,
             },
             {
                 title: "MetaBox VPS",
-                description: "VPS for MetaTrader with 4 vCPU, 12GB RAM, and 160GB SSD storage.",
+                description: "VPS optimized for MetaTrader platforms.",
                 price: "305.00",
-                categoryId: 2,
+                categoryId: 5,
                 tags: ["forex", "vps", "metatrader"],
                 isFree: false,
             },
             {
                 title: "ScalperEdge X",
-                description: "Elite VPS for forex scalping with 8 vCPU, 24GB RAM, and 250GB SSD storage.",
+                description: "Elite VPS for forex scalping strategies.",
                 price: "475.00",
-                categoryId: 2,
+                categoryId: 5,
                 tags: ["forex", "vps", "scalping"],
                 isFree: false,
             },
-            // VPN Hosting (Category ID: 7)
+            // VPN Hosting (Category ID: 6)
             {
                 title: "VPNForge Node",
-                description: "VPS for VPN hosting with 2 vCPU, 4GB RAM, and 80GB SSD storage.",
+                description: "VPS for secure VPN hosting.",
                 price: "270.00",
-                categoryId: 7,
+                categoryId: 6,
                 tags: ["vpn", "vps", "node"],
                 isFree: false,
             },
             {
                 title: "AnonyBox VPS",
-                description: "Entry-level VPS for VPNs with 1 vCPU, 2GB RAM, and 40GB SSD storage.",
+                description: "Entry-level VPS for VPN anonymity.",
                 price: "110.00",
-                categoryId: 7,
+                categoryId: 6,
                 tags: ["vpn", "vps", "anonymity"],
                 isFree: false,
             },
             {
                 title: "TunnelX Pro",
-                description: "VPS for secure VPNs with 4 vCPU, 8GB RAM, and 120GB SSD storage.",
+                description: "VPS for secure VPN tunneling.",
                 price: "325.00",
-                categoryId: 7,
+                categoryId: 6,
                 tags: ["vpn", "vps", "pro"],
                 isFree: false,
             },
             {
                 title: "MaskedNet Elite",
-                description: "High-performance VPS for VPNs with 6 vCPU, 16GB RAM, and 200GB SSD storage.",
+                description: "High-performance VPS for VPN networks.",
                 price: "440.00",
-                categoryId: 7,
+                categoryId: 6,
                 tags: ["vpn", "vps", "elite"],
                 isFree: false,
             },
             {
                 title: "OpenWire VPS",
-                description: "VPS for open-source VPNs with 2 vCPU, 2GB RAM, and 60GB SSD storage.",
+                description: "VPS for open-source VPN solutions.",
                 price: "155.00",
-                categoryId: 7,
+                categoryId: 6,
                 tags: ["vpn", "vps", "open-source"],
+                isFree: false,
+            },
+            // Developers / DevOps (Category ID: 7)
+            {
+                title: "DevOpsNode VPS",
+                description: "VPS for DevOps workflows with essential resources.",
+                price: "180.00",
+                categoryId: 7,
+                tags: ["devops", "vps", "node"],
+                isFree: false,
+            },
+            {
+                title: "Ci/CD Runner",
+                description: "VPS for CI/CD pipelines with optimized performance.",
+                price: "230.00",
+                categoryId: 7,
+                tags: ["devops", "vps", "cicd"],
+                isFree: false,
+            },
+            {
+                title: "CodeOps Elite",
+                description: "Elite VPS for advanced DevOps workflows.",
+                price: "365.00",
+                categoryId: 7,
+                tags: ["devops", "vps", "elite"],
+                isFree: false,
+            },
+            {
+                title: "BuildZone Pro",
+                description: "High-performance VPS for DevOps builds.",
+                price: "420.00",
+                categoryId: 7,
+                tags: ["devops", "vps", "pro"],
+                isFree: false,
+            },
+            {
+                title: "AutoStack VPS",
+                description: "Automated VPS for DevOps pipelines.",
+                price: "290.00",
+                categoryId: 7,
+                tags: ["devops", "vps", "auto"],
                 isFree: false,
             },
             // Crypto / Blockchain (Category ID: 8)
             {
                 title: "BlockNode VPS",
-                description: "VPS for blockchain nodes with 8 vCPU, 32GB RAM, and 500GB SSD storage.",
+                description: "VPS for blockchain nodes with high capacity.",
                 price: "460.00",
                 categoryId: 8,
                 tags: ["crypto", "vps", "blockchain"],
@@ -375,7 +384,7 @@ export class MemStorage {
             },
             {
                 title: "CryptoPulse Pro",
-                description: "VPS for crypto apps with 4 vCPU, 8GB RAM, and 120GB SSD storage.",
+                description: "VPS for crypto applications with optimized resources.",
                 price: "205.00",
                 categoryId: 8,
                 tags: ["crypto", "vps", "pro"],
@@ -383,7 +392,7 @@ export class MemStorage {
             },
             {
                 title: "ChainCore VPS",
-                description: "VPS for blockchain infrastructure with 6 vCPU, 16GB RAM, and 250GB SSD storage.",
+                description: "VPS for blockchain infrastructure.",
                 price: "395.00",
                 categoryId: 8,
                 tags: ["crypto", "vps", "core"],
@@ -391,15 +400,15 @@ export class MemStorage {
             },
             {
                 title: "MinerVault Elite",
-                description: "VPS for crypto mining with 6 vCPU, 24GB RAM, and 300GB SSD storage.",
+                description: "VPS for crypto mining operations.",
                 price: "330.00",
                 categoryId: 8,
                 tags: ["crypto", "vps", "mining"],
                 isFree: false,
             },
             {
-                title: "DeFiDrive Node",
-                description: "VPS for DeFi apps with 2 vCPU, 4GB RAM, and 80GB SSD storage.",
+                title: "DefiDrive Node",
+                description: "VPS for DeFi applications with essential resources.",
                 price: "115.00",
                 categoryId: 8,
                 tags: ["crypto", "vps", "defi"],
@@ -408,7 +417,7 @@ export class MemStorage {
             // Bloggers & Creators (Category ID: 9)
             {
                 title: "BlogBoost VPS",
-                description: "VPS for blogs with 2 vCPU, 4GB RAM, and 60GB SSD storage.",
+                description: "VPS for blogs with optimized performance.",
                 price: "140.00",
                 categoryId: 9,
                 tags: ["blog", "vps", "content"],
@@ -416,7 +425,7 @@ export class MemStorage {
             },
             {
                 title: "StoryHost Pro",
-                description: "VPS for content creators with 3 vCPU, 6GB RAM, and 100GB SSD storage.",
+                description: "VPS for content creators with robust resources.",
                 price: "245.00",
                 categoryId: 9,
                 tags: ["blog", "vps", "pro"],
@@ -424,7 +433,7 @@ export class MemStorage {
             },
             {
                 title: "WriteZone Elite",
-                description: "VPS for blogging platforms with 2 vCPU, 8GB RAM, and 80GB SSD storage.",
+                description: "VPS for blogging platforms with high performance.",
                 price: "190.00",
                 categoryId: 9,
                 tags: ["blog", "vps", "elite"],
@@ -432,7 +441,7 @@ export class MemStorage {
             },
             {
                 title: "ContentCore VPS",
-                description: "High-performance VPS for creators with 6 vCPU, 16GB RAM, and 200GB SSD storage.",
+                description: "High-performance VPS for content creators.",
                 price: "385.00",
                 categoryId: 9,
                 tags: ["blog", "vps", "core"],
@@ -440,50 +449,50 @@ export class MemStorage {
             },
             {
                 title: "PodPage VPS",
-                description: "VPS for podcasters with 4 vCPU, 12GB RAM, and 150GB SSD storage.",
+                description: "VPS for podcasters with optimized resources.",
                 price: "320.00",
                 categoryId: 9,
                 tags: ["blog", "vps", "podcast"],
                 isFree: false,
             },
-            // Ethical Hackers / Cybersecurity (Category ID: 5)
+            // Ethical Hackers / Cybersecurity (Category ID: 10)
             {
                 title: "KaliX Lab VPS",
-                description: "VPS for ethical hacking with 2 vCPU, 4GB RAM, and 80GB SSD storage.",
+                description: "VPS for ethical hacking labs with essential resources.",
                 price: "170.00",
-                categoryId: 5,
+                categoryId: 10,
                 tags: ["cybersecurity", "vps", "kali"],
                 isFree: false,
             },
             {
                 title: "GhostOps Node",
-                description: "VPS for security testing with 4 vCPU, 8GB RAM, and 120GB SSD storage.",
+                description: "VPS for security testing with robust performance.",
                 price: "260.00",
-                categoryId: 5,
+                categoryId: 10,
                 tags: ["cybersecurity", "vps", "ops"],
                 isFree: false,
             },
             {
                 title: "HackLab Elite",
-                description: "High-performance VPS for hacking labs with 6 vCPU, 16GB RAM, and 250GB SSD storage.",
+                description: "High-performance VPS for cybersecurity labs.",
                 price: "490.00",
-                categoryId: 5,
+                categoryId: 10,
                 tags: ["cybersecurity", "vps", "elite"],
                 isFree: false,
             },
             {
                 title: "ParrotShell VPS",
-                description: "VPS for cybersecurity testing with 2 vCPU, 6GB RAM, and 100GB SSD storage.",
+                description: "VPS for cybersecurity testing with optimized resources.",
                 price: "145.00",
-                categoryId: 5,
+                categoryId: 10,
                 tags: ["cybersecurity", "vps", "parrot"],
                 isFree: false,
             },
             {
                 title: "AnonBox Pro",
-                description: "VPS for anonymous security testing with 4 vCPU, 12GB RAM, and 180GB SSD storage.",
+                description: "VPS for anonymous security testing.",
                 price: "365.00",
-                categoryId: 5,
+                categoryId: 10,
                 tags: ["cybersecurity", "vps", "anon"],
                 isFree: false,
             },
@@ -504,6 +513,7 @@ export class MemStorage {
             this.products.set(product.id, product);
         });
     }
+
     async getUser(id) {
         return this.users.get(id);
     }
@@ -671,9 +681,9 @@ export class MemStorage {
         return orderItem;
     }
     async updateOrder(order) {
-        // Update the order in the orders Map
         this.orders.set(order.id, order);
         return order;
     }
 }
+
 export const storage = new MemStorage();

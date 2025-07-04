@@ -297,7 +297,7 @@ app.post('/api/payment-callback', (req, res) => {
       return res.status(403).json({ error: 'Missing IPN signature' });
     }
 
-    // Stringify the body exactly like NOWPayments expects
+    // Stringify the body 
     const payloadString = JSON.stringify(body);
     const computedSignature = crypto
       .createHmac('sha512', NOWPAYMENTS_IPN_SECRET)
