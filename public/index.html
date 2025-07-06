@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VPS eShop - Cloud Hosting Solutions</title>
-  <link rel="icon" type="image/x-icon" href="/favicon.ico"> <!-- Added favicon link -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.coinpayments.net/lib/coinpayments.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -99,6 +99,15 @@
         <label for="developer-email" class="block text-sm mb-1">Your Developer's Email</label>
         <input id="developer-email" type="email" class="w-full p-2 bg-gray-700 text-white rounded" placeholder="e.g., dev@example.com">
       </div>
+      <div class="mb-4">
+        <label for="currency-select" class="block text-sm mb-1">Payment Currency</label>
+        <select id="currency-select" class="w-full p-2 bg-gray-700 text-white rounded">
+          <option value="btc">Bitcoin (BTC)</option>
+          <option value="eth">Ethereum (ETH)</option>
+          <option value="ltc">Litecoin (LTC)</option>
+          <option value="usdt">Tether (USDT)</option>
+        </select>
+      </div>
       <div id="loading-spinner" class="hidden flex justify-center items-center mb-4">
         <div class="spinner"></div>
         <span class="ml-2 text-gray-300">Processing...</span>
@@ -125,17 +134,17 @@
   <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-gray-900 text-white p-6 rounded-lg w-full max-w-md mx-4">
       <h2 class="text-xl font-bold mb-4">Complete Your Payment</h2>
-      <p class="mb-2"><strong>Send exactly:</strong> <span id="btc-amount" class="text-green-400"></span> BTC</p>
+      <p class="mb-2"><strong>Send exactly:</strong> <span id="payment-amount" class="text-green-400"></span> <span id="payment-currency"></span></p>
       <p class="mb-2"><strong>To wallet address:</strong></p>
       <div class="flex items-center mb-4 space-x-2">
-        <p id="btc-address" class="text-yellow-400 break-all"></p>
+        <p id="payment-address" class="text-yellow-400 break-all"></p>
         <button onclick="copyWalletAddress()" class="text-blue-400 hover:text-blue-300" title="Copy address">
           <i class="fas fa-copy"></i>
         </button>
         <span id="copy-confirmation" class="text-green-400 text-sm hidden">Copied!</span>
       </div>
       <div class="flex justify-center mb-4">
-        <img id="btc-qr" class="w-40 h-40" alt="QR Code">
+        <img id="payment-qr" class="w-40 h-40" alt="QR Code">
       </div>
       <button id="confirm-payment-btn" class="bg-blue-600 text-white px-4 py-2 rounded mt-4 hover:bg-blue-700 w-full">
         I've Made the Payment
@@ -232,10 +241,19 @@
 
     async function updateCartCount() {
       const userId = localStorage.getItem('userId');
-      if (!userId) return;
+      if (!userId) {
+        document.getElementById('cart-count').textContent = 'Cart: 0 items';
+        return;
+      }
       try {
         const response = await fetch(`${API_BASE_URL}/cart/${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch cart');
+        if (!response.ok) {
+          if (response.status === 404) {
+            alert('User not found. Please login again.');
+            logout();
+          }
+          throw new Error('Failed to fetch cart');
+        }
         const cartItems = await response.json();
         document.getElementById('cart-count').textContent = `Cart: ${cartItems.length} items`;
       } catch (error) {
@@ -261,7 +279,7 @@
         alert('Product added to cart!');
       } catch (error) {
         console.error('Error adding to cart:', error);
-        alert('Failed to add to cart.');
+        alert('Failed to add to cart. Please try again.');
       }
     }
 
@@ -274,7 +292,13 @@
       }
       try {
         const response = await fetch(`${API_BASE_URL}/cart/${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch cart');
+        if (!response.ok) {
+          if (response.status === 404) {
+            alert('User not found. Please login again.');
+            logout();
+          }
+          throw new Error('Failed to fetch cart');
+        }
         const cartItems = await response.json();
         const cartItemsContainer = document.getElementById('cart-items');
         cartItemsContainer.innerHTML = '';
@@ -294,7 +318,7 @@
         document.getElementById('cart-modal').classList.remove('hidden');
       } catch (error) {
         console.error('Error fetching cart:', error);
-        alert('Failed to load cart.');
+        alert('Failed to load cart. Please try again.');
       }
     }
 
@@ -307,7 +331,7 @@
         updateCartCount();
       } catch (error) {
         console.error('Error removing from cart:', error);
-        alert('Failed to remove from cart.');
+        alert('Failed to remove from cart. Please try again.');
       }
     }
 
@@ -320,7 +344,13 @@
       }
       try {
         const response = await fetch(`${API_BASE_URL}/cart/${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch cart');
+        if (!response.ok) {
+          if (response.status === 404) {
+            alert('User not found. Please login again.');
+            logout();
+          }
+          throw new Error('Failed to fetch cart');
+        }
         const cartItems = await response.json();
         if (cartItems.length === 0) {
           alert('Your cart is empty.');
@@ -331,15 +361,16 @@
         document.getElementById('developer-modal').classList.remove('hidden');
       } catch (error) {
         console.error('Error initiating checkout:', error);
-        alert('Failed to initiate checkout.');
+        alert('Failed to initiate checkout. Please try again.');
       }
     }
 
-    function showPaymentModal(address, amount, orderId) {
+    function showPaymentModal(address, amount, currency, orderId) {
       window.currentOrderId = orderId;
-      document.getElementById('btc-address').textContent = address;
-      document.getElementById('btc-amount').textContent = amount;
-      document.getElementById('btc-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bitcoin:${address}?amount=${amount}`;
+      document.getElementById('payment-address').textContent = address;
+      document.getElementById('payment-amount').textContent = amount;
+      document.getElementById('payment-currency').textContent = currency.toUpperCase();
+      document.getElementById('payment-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${currency}:${address}?amount=${amount}`;
       document.getElementById('payment-modal').classList.remove('hidden');
       document.getElementById('confirm-payment-btn').disabled = false;
       document.getElementById('payment-status-text').classList.add('hidden');
@@ -356,7 +387,7 @@
     }
 
     function copyWalletAddress() {
-      const address = document.getElementById('btc-address').textContent;
+      const address = document.getElementById('payment-address').textContent;
       navigator.clipboard.writeText(address).then(() => {
         const confirmation = document.getElementById('copy-confirmation');
         confirmation.classList.remove('hidden');
@@ -391,9 +422,15 @@
 
     async function handlePayment(isBuyNow = false, productId = null) {
       const userId = localStorage.getItem('userId');
+      if (!userId) {
+        alert('Please login or signup to proceed with payment.');
+        showAuthModal();
+        return;
+      }
       const isDeveloper = document.querySelector('input[name="is-developer"]:checked').value;
       const githubInput = document.getElementById('github-input').value;
       const developerEmail = document.getElementById('developer-email').value;
+      const pay_currency = document.getElementById('currency-select').value;
       if (isDeveloper === 'yes' && !githubInput) {
         alert('Please provide a GitHub username or email.');
         return;
@@ -419,11 +456,20 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: parseInt(userId), cartItems: [{ productId, quantity: 1 }] })
           });
-          if (!orderResponse.ok) throw new Error('Failed to create order');
+          if (!orderResponse.ok) {
+            const errorData = await orderResponse.json();
+            throw new Error(errorData.error || 'Failed to create order');
+          }
           order = await orderResponse.json();
         } else {
           const cartResponse = await fetch(`${API_BASE_URL}/cart/${userId}`);
-          if (!cartResponse.ok) throw new Error('Failed to fetch cart');
+          if (!cartResponse.ok) {
+            if (cartResponse.status === 404) {
+              alert('User not found. Please login again.');
+              logout();
+            }
+            throw new Error('Failed to fetch cart');
+          }
           const cartItems = await cartResponse.json();
           if (cartItems.length === 0) {
             alert('Your cart is empty.');
@@ -437,7 +483,10 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: parseInt(userId), cartItems })
           });
-          if (!orderResponse.ok) throw new Error('Failed to create order');
+          if (!orderResponse.ok) {
+            const errorData = await orderResponse.json();
+            throw new Error(errorData.error || 'Failed to create order');
+          }
           order = await orderResponse.json();
         }
 
@@ -450,14 +499,17 @@
         const paymentResponse = await fetch(`${API_BASE_URL}/create-payment`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: order.id, userId: parseInt(userId) })
+          body: JSON.stringify({ orderId: order.id, userId: parseInt(userId), pay_currency })
         });
-        if (!paymentResponse.ok) throw new Error('Failed to create payment');
+        if (!paymentResponse.ok) {
+          const errorData = await paymentResponse.json();
+          throw new Error(errorData.error || 'Failed to create payment');
+        }
         const paymentData = await paymentResponse.json();
         if (paymentData.payment_url) {
           window.location.href = paymentData.payment_url;
         } else if (paymentData.pay_address && paymentData.pay_amount) {
-          showPaymentModal(paymentData.pay_address, paymentData.pay_amount, order.id);
+          showPaymentModal(paymentData.pay_address, paymentData.pay_amount, paymentData.pay_currency, order.id);
         } else {
           alert('No payment info received. Please try again later.');
         }
@@ -466,9 +518,8 @@
         updateCartCount();
       } catch (error) {
         console.error('Error processing payment:', error);
-        alert('Failed to process payment. Check console for details.');
+        alert(`Failed to process payment: ${error.message}. Please try again or login.`);
       } finally {
-        // Hide loading spinner
         spinner.classList.add('hidden');
         submitBtn.disabled = false;
         cancelBtn.disabled = false;
@@ -520,7 +571,10 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, email, password })
         });
-        if (!response.ok) throw new Error('Failed to signup');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to signup');
+        }
         const user = await response.json();
         localStorage.setItem('userId', user.id);
         localStorage.setItem('username', user.username);
@@ -531,7 +585,7 @@
         updateCartCount();
       } catch (error) {
         console.error('Error signing up:', error);
-        alert('Failed to signup. Email may already exist.');
+        alert(`Failed to signup: ${error.message}`);
       }
     }
 
@@ -575,7 +629,7 @@
 
     document.getElementById('modal-submit').addEventListener('click', () => {
       const isBuyNow = document.getElementById('modal-title').textContent === 'Checkout Details' ? false : true;
-      const productId = isBuyNow ? parseInt(document.querySelector('.buy-now').dataset.id) : null;
+      const productId = isBuyNow ? parseInt(document.querySelector('.buy-now:hover')?.dataset.id || document.querySelector('.buy-now').dataset.id) : null;
       handlePayment(isBuyNow, productId);
     });
 

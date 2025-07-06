@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const { storage } = require('./storage.js');
 const nodemailer = require('nodemailer');
-const fs = require('fs');
 const axios = require('axios');
 const crypto = require('crypto');
 
@@ -11,7 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configure Nodemailer for email automation (to be configured later)
+// Configure Nodemailer for email automation
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -29,10 +28,11 @@ const logToFile = (filename, entry) => {
 const NOWPAYMENTS_API_KEY = process.env.NOWPAYMENTS_API_KEY || '24KGXSK-H004Z1G-K7M22EZ-32RNGBV';
 const NOWPAYMENTS_API_URL = 'https://api.nowpayments.io/v1/payment';
 const NOWPAYMENTS_IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET || 'mPUMX/aGV5uoaPk/Jd0COUat1f0YZkkE';
+const SUPPORTED_CURRENCIES = ['btc', 'eth', 'ltc', 'usdt']; // Supported cryptocurrencies
 
 // Ensure VERCEL_URL is a valid HTTPS URL and append callback path
 const getValidVercelUrl = () => {
-  const baseUrl = process.env.VERCEL_URL || 'ecommerce-website-bqjdovegy-testyemma123-gmailcoms-projects.vercel.app';
+  const baseUrl = process.env.VERCEL_URL || 'ecommerce-website-74eyv5mh3-testyemma123-gmailcoms-projects.vercel.app';
   const url = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
   const cleanUrl = url.endsWith('/') ? url.slice(0, -1) : url;
   return `${cleanUrl}/api/payment-callback`;
@@ -132,11 +132,11 @@ app.get('/api/cart/:userId', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     const user = await storage.getUser(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ error: `User not found for ID: ${userId}` });
     const cartItems = await storage.getCartItems(userId);
     return res.json(cartItems);
   } catch (error) {
-    console.error('Error in /cart:', error);
+    console.error(`Error in /cart/${req.params.userId}:`, error);
     return res.status(500).json({ error: 'Failed to get cart items', details: error.message });
   }
 });
@@ -146,7 +146,7 @@ app.delete('/api/cart/:userId/:productId', async (req, res) => {
     const userId = parseInt(req.params.userId);
     const productId = parseInt(req.params.productId);
     const user = await storage.getUser(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ error: `User not found for ID: ${userId}` });
     await storage.removeFromCart(userId, productId);
     return res.json({ message: 'Item removed from cart' });
   } catch (error) {
@@ -170,8 +170,11 @@ app.get('/api/order-status/:id', async (req, res) => {
 
 app.post('/api/create-payment', async (req, res) => {
   try {
-    const { orderId, userId } = req.body;
-    console.log('Create payment request:', { orderId, userId });
+    const { orderId, userId, pay_currency = 'btc' } = req.body;
+    if (!SUPPORTED_CURRENCIES.includes(pay_currency.toLowerCase())) {
+      return res.status(400).json({ error: `Unsupported currency: ${pay_currency}. Supported: ${SUPPORTED_CURRENCIES.join(', ')}` });
+    }
+    console.log('Create payment request:', { orderId, userId, pay_currency });
     const order = await storage.getOrderById(parseInt(orderId));
     if (!order) {
       console.error('Order not found:', orderId);
@@ -193,7 +196,7 @@ app.post('/api/create-payment', async (req, res) => {
     const paymentData = {
       price_amount: order.total.toString(),
       price_currency: 'usd',
-      pay_currency: 'btc',
+      pay_currency: pay_currency.toLowerCase(),
       order_id: order.id.toString(),
       order_description: `Payment for Order #${order.id} - ${order.items.map(item => item.product?.title).join(', ') || 'No items'}`,
       ipn_callback_url: vercelUrl,
@@ -222,7 +225,8 @@ app.post('/api/create-payment', async (req, res) => {
     } else if (response.data.pay_address && response.data.pay_amount) {
       res.json({
         pay_address: response.data.pay_address,
-        pay_amount: response.data.pay_amount
+        pay_amount: response.data.pay_amount,
+        pay_currency: paymentData.pay_currency
       });
     } else {
       console.error("No usable payment data received:", response.data);
@@ -239,7 +243,7 @@ app.post('/api/create-order', async (req, res) => {
     const { userId, cartItems } = req.body;
     if (!userId || !cartItems || !Array.isArray(cartItems)) return res.status(400).json({ error: 'User ID and cart items are required' });
     const user = await storage.getUser(parseInt(userId));
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ error: `User not found for ID: ${userId}` });
     const order = await storage.createOrder({ userId: parseInt(userId), status: 'pending', paymentMethod: 'crypto' });
     let total = 0;
     for (const item of cartItems) {
@@ -253,7 +257,7 @@ app.post('/api/create-order', async (req, res) => {
     await storage.updateOrder(order);
     await storage.clearCart(parseInt(userId));
 
-    // Email notification (to be configured later)
+    // Email notification
     const mailOptions = {
       from: process.env.EMAIL_USER || 'your-email@gmail.com',
       to: user.email,
@@ -277,7 +281,7 @@ app.get('/api/orders/:userId', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     const user = await storage.getUser(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ error: `User not found for ID: ${userId}` });
     const orders = await storage.getUserOrders(userId);
     return res.json(orders);
   } catch (error) {
@@ -290,14 +294,12 @@ app.get('/api/orders/:userId', async (req, res) => {
 app.post('/api/payment-callback', (req, res) => {
   try {
     const body = req.body;
-
     const receivedSignature = req.headers['x-nowpayments-sig'];
     if (!receivedSignature) {
       console.error('Missing IPN signature');
       return res.status(403).json({ error: 'Missing IPN signature' });
     }
 
-    // Stringify the body 
     const payloadString = JSON.stringify(body);
     const computedSignature = crypto
       .createHmac('sha512', NOWPAYMENTS_IPN_SECRET)
@@ -310,7 +312,6 @@ app.post('/api/payment-callback', (req, res) => {
     }
 
     const { payment_status, order_id, payment_id } = body;
-
     storage.getOrderById(parseInt(order_id)).then(order => {
       if (order) {
         if (payment_status === 'confirmed' || payment_status === 'finished') {
