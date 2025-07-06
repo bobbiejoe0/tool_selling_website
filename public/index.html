@@ -60,24 +60,32 @@
   <!-- Login/Signup Modal -->
   <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-20">
     <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md mx-4 sm:mx-0">
-      <h2 id="auth-title" class="text-2xl font-semibold mb-6 text-center">Login or Signup</h2>
-      <div class="mb-4">
-        <label for="auth-username" class="block text-sm font-medium mb-2">Username</label>
-        <input id="auth-username" type="text" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="e.g., bobbiejoe0">
+      <div id="signup-form" class="">
+        <h2 class="text-2xl font-semibold mb-6 text-center">Sign Up</h2>
+        <div class="mb-4">
+          <input id="auth-username" type="text" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Username">
+        </div>
+        <div class="mb-4">
+          <input id="auth-email" type="email" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Email">
+        </div>
+        <div class="mb-6">
+          <input id="auth-password" type="password" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Password">
+        </div>
+        <button id="signup-submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full">Sign Up</button>
+        <p class="text-center mt-4">Already a member? <button id="toggle-login" class="text-blue-400 hover:underline">Sign In</button></p>
       </div>
-      <div class="mb-4">
-        <label for="auth-email" class="block text-sm font-medium mb-2">Email</label>
-        <input id="auth-email" type="email" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="e.g., user@example.com">
+      <div id="login-form" class="hidden">
+        <h2 class="text-2xl font-semibold mb-6 text-center">Sign In</h2>
+        <div class="mb-4">
+          <input id="auth-login-identifier" type="text" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Email or Username">
+        </div>
+        <div class="mb-6">
+          <input id="auth-login-password" type="password" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Password">
+        </div>
+        <button id="login-submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Sign In</button>
+        <p class="text-center mt-4">Wanna become a member? <button id="toggle-signup" class="text-blue-400 hover:underline">Sign Up</button></p>
       </div>
-      <div class="mb-6">
-        <label for="auth-password" class="block text-sm font-medium mb-2">Password</label>
-        <input id="auth-password" type="password" class="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Password">
-      </div>
-      <div class="flex flex-col sm:flex-row justify-between mb-4 space-y-2 sm:space-y-0 sm:space-x-2">
-        <button id="login-submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto">Login</button>
-        <button id="signup-submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full sm:w-auto">Signup</button>
-      </div>
-      <button id="auth-cancel" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500 w-full">Cancel</button>
+      <button id="auth-cancel" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500 w-full mt-2">Cancel</button>
     </div>
   </div>
   <!-- Developer Modal -->
@@ -369,7 +377,7 @@
       window.currentOrderId = orderId;
       document.getElementById('payment-address').textContent = address;
       document.getElementById('payment-amount').textContent = amount;
-      document.getElementById('payment-currency').textContent = currency.toUpperCase();
+      document.getElementById('payment-currency').textテキストコンテンツ = currency.toUpperCase();
       document.getElementById('payment-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${currency}:${address}?amount=${amount}`;
       document.getElementById('payment-modal').classList.remove('hidden');
       document.getElementById('confirm-payment-btn').disabled = false;
@@ -528,6 +536,8 @@
 
     function showAuthModal() {
       document.getElementById('auth-modal').classList.remove('hidden');
+      document.getElementById('signup-form').classList.remove('hidden');
+      document.getElementById('login-form').classList.add('hidden');
     }
 
     function hideAuthModal() {
@@ -535,16 +545,18 @@
       document.getElementById('auth-username').value = '';
       document.getElementById('auth-email').value = '';
       document.getElementById('auth-password').value = '';
+      document.getElementById('auth-login-identifier').value = '';
+      document.getElementById('auth-login-password').value = '';
     }
 
     async function login() {
-      const email = document.getElementById('auth-email').value;
-      const password = document.getElementById('auth-password').value;
+      const identifier = document.getElementById('auth-login-identifier').value;
+      const password = document.getElementById('auth-login-password').value;
       try {
         const response = await fetch(`${API_BASE_URL}/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email: identifier, password })
         });
         if (!response.ok) throw new Error('Failed to login');
         const user = await response.json();
@@ -557,7 +569,7 @@
         updateCartCount();
       } catch (error) {
         console.error('Error logging in:', error);
-        alert('Invalid email or password.');
+        alert('Invalid email/username or password.');
       }
     }
 
@@ -644,6 +656,16 @@
       document.getElementById('confirm-payment-btn').disabled = true;
       document.getElementById('payment-status-text').classList.remove('hidden');
       pollOrderStatus(window.currentOrderId);
+    });
+
+    document.getElementById('toggle-login').addEventListener('click', () => {
+      document.getElementById('signup-form').classList.add('hidden');
+      document.getElementById('login-form').classList.remove('hidden');
+    });
+
+    document.getElementById('toggle-signup').addEventListener('click', () => {
+      document.getElementById('login-form').classList.add('hidden');
+      document.getElementById('signup-form').classList.remove('hidden');
     });
 
     document.addEventListener('click', (e) => {
