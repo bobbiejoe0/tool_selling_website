@@ -32,8 +32,7 @@
       </h1>
       <div class="flex items-center space-x-2 sm:space-x-4 flex-grow">
         <input id="search-bar" type="text" placeholder="Search VPS plans..." class="p-2 bg-gray-700 text-white rounded w-full sm:w-48 flex-shrink">
-        <div id="cart-count" class="text-sm sm:text-lg whitespace-nowrap">Cart: 0 items</div>
-        <button id="view-cart" class="bg-blue-600 text-white px-2 sm:px-3 py-2 rounded hover:bg-blue-700 flex items-center">
+        <button id="view-cart" class="bg-blue-600 text-white px-2 sm:px-3 py-2 rounded hover:bg-blue-700 flex items-center hidden">
           <i class="fas fa-shopping-cart sm:mr-2"></i>
           <span class="hidden sm:inline">View Cart</span>
         </button>
@@ -249,8 +248,9 @@
 
     async function updateCartCount() {
       const userId = localStorage.getItem('userId');
+      const viewCartButton = document.getElementById('view-cart');
       if (!userId) {
-        document.getElementById('cart-count').textContent = 'Cart: 0 items';
+        viewCartButton.classList.add('hidden');
         return;
       }
       try {
@@ -263,9 +263,11 @@
           throw new Error('Failed to fetch cart');
         }
         const cartItems = await response.json();
-        document.getElementById('cart-count').textContent = `Cart: ${cartItems.length} items`;
+        const itemCount = cartItems.length;
+        viewCartButton.classList.toggle('hidden', itemCount === 0);
       } catch (error) {
         console.error('Error fetching cart count:', error);
+        viewCartButton.classList.add('hidden');
       }
     }
 
@@ -377,7 +379,7 @@
       window.currentOrderId = orderId;
       document.getElementById('payment-address').textContent = address;
       document.getElementById('payment-amount').textContent = amount;
-      document.getElementById('payment-currency').textテキストコンテンツ = currency.toUpperCase();
+      document.getElementById('payment-currency').textContent = currency.toUpperCase();
       document.getElementById('payment-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${currency}:${address}?amount=${amount}`;
       document.getElementById('payment-modal').classList.remove('hidden');
       document.getElementById('confirm-payment-btn').disabled = false;
@@ -608,7 +610,7 @@
       document.getElementById('auth-btn').classList.remove('bg-green-600', 'hover:bg-green-700');
       document.getElementById('auth-btn').classList.add('bg-gray-600', 'hover:bg-gray-500');
       document.getElementById('logout-btn').classList.add('hidden');
-      document.getElementById('cart-count').textContent = 'Cart: 0 items';
+      document.getElementById('view-cart').classList.add('hidden');
     }
 
     document.getElementById('category-filter').addEventListener('change', (e) => {
