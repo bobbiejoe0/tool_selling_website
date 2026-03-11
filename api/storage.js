@@ -459,7 +459,7 @@ export class MemStorage {
             {
                 title: "KaliX Lab VPS",
                 description: "VPS for ethical hacking labs with essential resources.",
-                price: "170.00",
+                price: "670.00",
                 categoryId: 10,
                 tags: ["cybersecurity", "vps", "kali"],
                 isFree: false,
@@ -467,7 +467,7 @@ export class MemStorage {
             {
                 title: "GhostOps Node",
                 description: "VPS for security testing with robust performance.",
-                price: "260.00",
+                price: "760.00",
                 categoryId: 10,
                 tags: ["cybersecurity", "vps", "ops"],
                 isFree: false,
@@ -475,7 +475,7 @@ export class MemStorage {
             {
                 title: "HackLab Elite",
                 description: "High-performance VPS for cybersecurity labs.",
-                price: "490.00",
+                price: "800.00",
                 categoryId: 10,
                 tags: ["cybersecurity", "vps", "elite"],
                 isFree: false,
@@ -483,7 +483,7 @@ export class MemStorage {
             {
                 title: "ParrotShell VPS",
                 description: "VPS for cybersecurity testing with optimized resources.",
-                price: "145.00",
+                price: "845.00",
                 categoryId: 10,
                 tags: ["cybersecurity", "vps", "parrot"],
                 isFree: false,
@@ -491,7 +491,7 @@ export class MemStorage {
             {
                 title: "AnonBox Pro",
                 description: "VPS for anonymous security testing.",
-                price: "365.00",
+                price: "665.00",
                 categoryId: 10,
                 tags: ["cybersecurity", "vps", "anon"],
                 isFree: false,
